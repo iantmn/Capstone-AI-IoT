@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import math as m
 from collections.abc import Collection
 
 
@@ -90,7 +91,7 @@ def peak_value_frequency(dataset: Collection, sampling_frequency: float) -> list
         peaks.append((loc, loc * sampling_frequency / (data.shape[0])))
     return peaks
 
-def windowing(filename: str, size: float = 2, offset: float = 0.2, sampling_frequency: float = 0) -> np.ndarray:
+def windowing(filename: str, size: float = 2, offset: float = 0.2) -> np.ndarray:
     """_summary_
 
     Args:
@@ -103,29 +104,106 @@ def windowing(filename: str, size: float = 2, offset: float = 0.2, sampling_freq
     """    
     try:
         with open(filename) as f:
-            if filename.split('.')[-1].lower() == 'json':
+            file_extension = filename.split('.')[-1].lower()
+            if file_extension == 'json':
                 json_data = json.load(f)['payload']
-                data = json_data['values']
+                # data = json_data['values']
+                data_array = np.array(json_data['values'])
                 sample_frequency = 1 / (json_data['interval_ms'] / 1000)
-            elif filename.split('.')[-1].lower() == 'csv':
-                pass
-            elif filename.txt('.')[-1].lower() == 'txt':
-                pass
+            elif file_extension == 'csv':
+                raise NotImplementedError(f"Filetype {filename.split('.')[-1]} is not implemented")
+                # sample rate seems to not be constant in the 'test wisser' file...
+            elif file_extension == 'txt':
+                # Skip the header lines
+                for _ in range(5): f.readline() # TODO change the range back to 4!
+
+                # Find the sample frequency by dividing 1 by the difference in time of two samples
+                t0 = float(f.readline().strip().split(',')[0])
+                t1 = float(f.readline().strip().split(',')[0])
+                sample_frequency = round(1 / (t1 - t0), 2)
+
+                # Finding the last timestamp of the data
+                last_point = 0.0
+                for line in f:
+                    last_point = float(line.strip().split(',')[0])
             else:
                 raise NotImplementedError(f"Filetype {filename.split('.')[-1]} is not implemented")
 
-            data_array = np.array(data)
+        print(sample_frequency)
 
-            if sampling_frequency == 0:
-                raise ValueError('No value was given for sampling frequency')
-            else:
-                samples_amount = size * sampling_frequency
-                shift_amount = offset * sampling_frequency
-            starting_index = 0
-            while next(f):
-                pass
+        # Variable for the previous window and the current window
+        prev_window: list[list[float]] = []
+        current_window: list[list[float]] = []
+        
+        # Amount of samples per window
+        samples_window = int(size * sample_frequency)
+        # print(offset * sample_frequency)
+        # Amount of samples in the offset
+        samples_offset = m.ceil(offset * sample_frequency)
+        
+        # print(size, sample_frequency, samples_window)
+        # print(offset, sample_frequency, samples_offset)
+
+        # Open the file to write the features to
+        with open('intervals.txt', 'w') as g:
+            # Amount of samples to skip. Amount increases with offset / sample_frequency for every next window
+            total_offset = 0 # TODO change offset for working file!!
+
+            # As long as the total offset + the window size is smaller than the total duration of the recording,
+            # the input file is read every time with the new offset. The lines of code that can be reused from the
+            # previous time, are added to the new window and the new lines are also added.
+
+            k = 0
+            # while k < 4:
+            # print(total_offset + samples_window, )
+            while (total_offset + samples_window < int(last_point * sample_frequency)):
+                with open(filename) as f:
+                    # Skipping the header lines
+                    if file_extension == 'txt' or file_extension == 'csv':
+                        if file_extension == 'txt':
+                            for _ in range(5 + total_offset): f.readline() # TODO change the range back to 4 + offset!
+                        else:
+                            for _ in range(1 + total_offset): f.readline()
+
+                    # print(len(current_window))
+                    if len(current_window) == 0:
+                        for i in range(samples_window):
+                            line = f.readline().strip().split(',')
+                            current_window.append([])
+                            for j in range(3):
+                                current_window[i].append(float(line[j]))
+                    else:
+                        # try:
+                            for i in range(samples_window):
+                                if i < size * sample_frequency - samples_offset - 1:
+                                    current_window[i] = prev_window[i + samples_offset]
+                                    f.readline()
+                                else:
+                                    line = f.readline().strip().split(',')
+                                    # print(line)
+                                    for j in range(3):
+                                        current_window[i][j] = float(line[j])
+                        # except IndexError:
+                        #     raise IndexError(f'Index: {i} from range {samples_window} '
+                        #                      f'len: {len(current_window)}\n'
+                        #                      f'Index: {i + samples_offset} from range {samples_window} '
+                        #                      f'len: {len(prev_window)}')
+
+                    if len(prev_window) > 0:
+                        print('prev', prev_window[0], prev_window[-1], len(prev_window))
+                    print('curr', current_window[0], current_window[-1], len(current_window))
+
+                    if len(prev_window) == 0:
+                        for i in range(samples_window):
+                            prev_window.append(current_window[i])
+                    else:
+                        for i in range(samples_window):
+                            prev_window[i] = current_window[i]
+                k += 1
+                total_offset += samples_offset
+
     except FileNotFoundError:
-        print(f"File {filename} at the relative path not found!")
+        raise FileNotFoundError(f"File {filename} at the relative path not found!")
 
         
 def window(dataset, size, offset, sample_frequency):
