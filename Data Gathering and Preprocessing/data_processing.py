@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import math as m
+import matplotlib.pyplot as plt
 from collections.abc import Collection
 
 
@@ -44,18 +45,18 @@ def cntrd_pwr(dataset: Collection, sampling_frequency: float, epsilon: float = 0
     index = [0, 0, 0]  # index of the centroid
     # compute for all three sensors
     for i in range(3):
-        maxm = max(dataset[:, i])
+        maxm = max(dataset[1:, i])
         length = len(dataset[:, i])
         # print(f'maximum: {maxm}, length {length}')
         # sum power and sum all values above the threshold
-        for j in range(length):
+        for j in range(1, length):
             total_power[i] += abs(dataset[j][i])
             if abs(dataset[j][i]) > epsilon*maxm:
                 centroid[i] += abs(dataset[j][i])
         goal = centroid[i]/2
         centroid[i] = 0.
         # reset j, go through the dataset again and stop when you surpass centroid/2
-        j = 0
+        j = 1
         while centroid[i] < goal:
             if abs(dataset[j][i]) > epsilon*maxm:
                 centroid[i] += abs(dataset[j][i])
@@ -91,29 +92,33 @@ def peak_value_frequency(dataset: Collection, sampling_frequency: float) -> list
         peaks.append((loc, loc * sampling_frequency / (data.shape[0])))
     return peaks
 
-def windowing(filename: str, size: float = 2, offset: float = 0.2) -> np.ndarray:
-    """_summary_
+def windowing(filename: str, action_ID: float, label: float, size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3) -> str:
+    """
+    Function for making windows of a certain size, with an offset. A window is made and the features of the window
+    are axtracted. The the window is slided the offset amount of seconds to the right and new window is made and
+    its features are extracted. This is done until the end of the file is reached. The extracted features are saved
+    in a file
 
     Args:
-        filename (str): location 
-        size (float, optional): _description_. Defaults to 2.
-        offset (float, optional): _description_. Defaults to 2.
+        filename (str): The relative path of the file with the data, seen from the main file.
+        size (float, optional): Size of the window in seconds. Defaults to 2.
+        offset (float, optional): Size of the offset in seconds. Defaults to 0.2.
+        start (int, optional): Start column from the data file. Defaults to 1.
+        stop (int, optional): Last column (including) of the data file. Defaults to 3.
+
+    Raises:
+        NotImplementedError: This error is raised if the file extension is not supported
+        FileNotFoundError: This error is raised if the file-parameter cannot be found
+        ValueError: This error is raised when a value in the file cannot be converted to a float
 
     Returns:
-        np.ndarray: _description_
+        str: The relative path of the output file. This file contains the extracted features.
     """    
     try:
         with open(filename) as f:
-            file_extension = filename.split('.')[-1].lower()
-            if file_extension == 'json':
-                json_data = json.load(f)['payload']
-                # data = json_data['values']
-                data_array = np.array(json_data['values'])
-                sample_frequency = 1 / (json_data['interval_ms'] / 1000)
-            elif file_extension == 'csv':
-                raise NotImplementedError(f"Filetype {filename.split('.')[-1]} is not implemented")
-                # sample rate seems to not be constant in the 'test wisser' file...
-            elif file_extension == 'txt':
+            # Check the file extension
+            file_extension = filename.split('.')[-1]
+            if file_extension == 'txt':
                 # Skip the header lines
                 for _ in range(5): f.readline() # TODO change the range back to 4!
 
@@ -126,10 +131,11 @@ def windowing(filename: str, size: float = 2, offset: float = 0.2) -> np.ndarray
                 last_point = 0.0
                 for line in f:
                     last_point = float(line.strip().split(',')[0])
+            # If the file extension is not supported
             else:
                 raise NotImplementedError(f"Filetype {filename.split('.')[-1]} is not implemented")
-
-        print(sample_frequency)
+            
+        # print(sample_frequency)
 
         # Variable for the previous window and the current window
         prev_window: list[list[float]] = []
@@ -137,79 +143,91 @@ def windowing(filename: str, size: float = 2, offset: float = 0.2) -> np.ndarray
         
         # Amount of samples per window
         samples_window = m.ceil(size * sample_frequency)
-        # print(offset * sample_frequency)
         # Amount of samples in the offset
         samples_offset = m.ceil(offset * sample_frequency)
         
-        print(size, sample_frequency, samples_window)
-        print(offset, sample_frequency, samples_offset)
+        # print(size, sample_frequency, samples_window)
+        # print(offset, sample_frequency, samples_offset)
 
-        # Open the file to write the features to
-        with open('intervals.txt', 'w') as g:
-            # Amount of samples to skip. Amount increases with offset / sample_frequency for every next window
-            total_offset = 0 # TODO change offset for working file!!
-
-            # As long as the total offset + the window size is smaller than the total duration of the recording,
-            # the input file is read every time with the new offset. The lines of code that can be reused from the
-            # previous time, are added to the new window and the new lines are also added.
-
-            k = 0
-            while k < 2:
-            # print(total_offset + samples_window, )
-            # while (total_offset + samples_window < int(last_point * sample_frequency)):
-                with open(filename) as f:
-                    # Skipping the header lines
-                    if file_extension == 'txt' or file_extension == 'csv':
-                        if file_extension == 'txt':
-                            for _ in range(5 + total_offset): f.readline() # TODO change the range back to 4 + offset!
-                        else:
-                            for _ in range(1 + total_offset): f.readline()
-
-                    if len(prev_window) > 0:
-                        print('prev 2', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
+        # When the end of a datafile is reached, this value is set to False and the loop is exited
+        not_finished = True
+        
+        # Opening the data file again and skipping the header lines.
+        k = 0
+        with open(filename) as f:
+            for _ in range(5): f.readline()
+            # Opening the output file; the extracted features will be put in the file
+            with open(f'features_{action_ID}.txt', 'a') as g:
+                # While the end of the file is not yet reached
+                # while not_finished:
+                while k < 3:
+                    # If there is no window made yet
                     if len(current_window) == 0:
-                        for i in range(samples_window):
+                        for _ in range(samples_window):
+                            # Store a list of the sensordata of the line that is read
                             line = f.readline().strip().split(',')
+                            # Initialise the current window, make sure the added value is an empty list
                             current_window.append([])
-                            for j in range(3):
-                                current_window[i].append(float(line[j]))
+                            for i in range(start, stop + 1):
+                                current_window[-1].append(float(line[i]))
                     else:
-                        # try:
-                        print('prev 3', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
-                        for i in range(samples_window):
-                            if i < size * sample_frequency - samples_offset - 1:
-                                current_window[i] = prev_window[i + samples_offset]
-                                f.readline()
-                            else:
+                        # If this is the first time that previous window is called, initialise it as a copy of current window
+                        # Use .copy() to prevent aliasing
+                        if len(prev_window) == 0:
+                            for i in range(samples_window):
+                                prev_window.append(current_window[i].copy())
+                        # Else we make it a direct copy of the current window as well
+                        else:
+                            for i in range(samples_window):
+                                prev_window[i] = current_window[i].copy()
+                        
+                        # Overwrite the current window values with it's previous values
+                        # The current window is slided the samples_offset amount of samples into the future. Thus
+                        # The samples [samples_offset:] of prev_window are the first samples for the current window.
+                        # The rest of the samples are new and read from the data file
+                        for i in range(samples_window - samples_offset):
+                            current_window[i] = prev_window[i + samples_offset].copy()
+                            
+                        # Read new lines from the file and add these to the end of the current file
+                        try:
+                            for i in range(samples_offset):
                                 line = f.readline().strip().split(',')
-                                # print(line)
-                                for j in range(3):
-                                    current_window[i][j] = float(line[j])
-                        print('prev 4', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
-                        # except IndexError:
-                        #     raise IndexError(f'Index: {i} from range {samples_window} '
-                        #                      f'len: {len(current_window)}\n'
-                        #                      f'Index: {i + samples_offset} from range {samples_window} '
-                        #                      f'len: {len(prev_window)}')
+                                # The last line of the file is an empty string. When detected we exit the while loop
+                                if line[0] == '':
+                                    not_finished = False
+                                    break
+                                # Read samples_offset amount of samples and add these to the current window
+                                for j in range(start, stop + 1):
+                                    # print(i, i + samples_window - samples_offset, j, line, len(current_window), len(current_window[0]))
+                                    current_window[i + samples_window - samples_offset][j - start] = float(line[j])
+                        except EOFError:
+                            not_finished = False
+                    # if len(prev_window) > 0:
+                    #     print('prev', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
+                    # print('curr', current_window[0], current_window[len(current_window)//2], current_window[-1], len(current_window))
+                    
+                    print(fourier(current_window, sample_frequency)[1:])
+                    ffts, features = fourier(current_window, sample_frequency)
+                    time = np.arange(0, len(current_window) / sample_frequency, 1 / sample_frequency)
 
-                if len(prev_window) > 0:
-                    print('prev 5', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
-                print('curr', current_window[0], current_window[len(current_window)//2], current_window[-1], len(current_window))
+                    ffts_shifted = np.fft.fftshift(ffts)
+                    # Not necessary anymore
+                    frequency = np.arange(-sample_frequency/2 + sample_frequency/(2*len(current_window)), #start
+                                        sample_frequency/2 + sample_frequency/(2*len(current_window)), #stop
+                                        sample_frequency/(len(current_window))) #interval
 
-                if len(prev_window) == 0:
-                    for i in range(samples_window):
-                        prev_window.append(current_window[i])
-                else:
-                    for i in range(samples_window):
-                        prev_window[i] = current_window[i]
-                print('prev 1', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
-
-                k += 1
-                total_offset += samples_offset
-
+                    fig, axes = plt.subplots(2, 1)
+                    axes[0].plot(time, current_window, label=['X', 'Y', 'Z'])
+                    axes[1].plot(frequency, abs(ffts_shifted), label=['X', 'Y', 'Z'])
+                    
+                    k += 1
+        axes[0].legend(loc='upper left')
+        axes[0].set_title("Accelerometer data")
+        axes[1].legend(loc='upper left')
+        axes[1].set_title("Fourier Transform")
+        plt.show()
+                    
     except FileNotFoundError:
         raise FileNotFoundError(f"File {filename} at the relative path not found!")
-
-        
-def window(dataset, size, offset, sample_frequency):
-    pass
+    except ValueError:
+        raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")

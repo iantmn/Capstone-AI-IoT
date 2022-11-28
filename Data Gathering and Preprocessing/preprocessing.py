@@ -43,7 +43,7 @@ def main() -> None:
     #     print("File not found!")
     # windowing(r'test-imu-export\testing\testing.3ia0sgrv.ingestion-77d7f974d5-xtfq4.json')
     # windowing(r'Accelerometer Data 0000.txt')
-    windowing(r'Accelerometer Data 2022-11-27 15-50-59.txt')
+    windowing(r'Accelerometer Data 2022-11-27 15-50-59.txt', 'Test', 'test')
 
 
 if __name__ == "__main__":
