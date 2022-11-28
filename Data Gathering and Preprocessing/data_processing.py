@@ -136,13 +136,13 @@ def windowing(filename: str, size: float = 2, offset: float = 0.2) -> np.ndarray
         current_window: list[list[float]] = []
         
         # Amount of samples per window
-        samples_window = int(size * sample_frequency)
+        samples_window = m.ceil(size * sample_frequency)
         # print(offset * sample_frequency)
         # Amount of samples in the offset
         samples_offset = m.ceil(offset * sample_frequency)
         
-        # print(size, sample_frequency, samples_window)
-        # print(offset, sample_frequency, samples_offset)
+        print(size, sample_frequency, samples_window)
+        print(offset, sample_frequency, samples_offset)
 
         # Open the file to write the features to
         with open('intervals.txt', 'w') as g:
@@ -154,9 +154,9 @@ def windowing(filename: str, size: float = 2, offset: float = 0.2) -> np.ndarray
             # previous time, are added to the new window and the new lines are also added.
 
             k = 0
-            # while k < 4:
+            while k < 2:
             # print(total_offset + samples_window, )
-            while (total_offset + samples_window < int(last_point * sample_frequency)):
+            # while (total_offset + samples_window < int(last_point * sample_frequency)):
                 with open(filename) as f:
                     # Skipping the header lines
                     if file_extension == 'txt' or file_extension == 'csv':
@@ -165,7 +165,8 @@ def windowing(filename: str, size: float = 2, offset: float = 0.2) -> np.ndarray
                         else:
                             for _ in range(1 + total_offset): f.readline()
 
-                    # print(len(current_window))
+                    if len(prev_window) > 0:
+                        print('prev 2', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
                     if len(current_window) == 0:
                         for i in range(samples_window):
                             line = f.readline().strip().split(',')
@@ -174,31 +175,35 @@ def windowing(filename: str, size: float = 2, offset: float = 0.2) -> np.ndarray
                                 current_window[i].append(float(line[j]))
                     else:
                         # try:
-                            for i in range(samples_window):
-                                if i < size * sample_frequency - samples_offset - 1:
-                                    current_window[i] = prev_window[i + samples_offset]
-                                    f.readline()
-                                else:
-                                    line = f.readline().strip().split(',')
-                                    # print(line)
-                                    for j in range(3):
-                                        current_window[i][j] = float(line[j])
+                        print('prev 3', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
+                        for i in range(samples_window):
+                            if i < size * sample_frequency - samples_offset - 1:
+                                current_window[i] = prev_window[i + samples_offset]
+                                f.readline()
+                            else:
+                                line = f.readline().strip().split(',')
+                                # print(line)
+                                for j in range(3):
+                                    current_window[i][j] = float(line[j])
+                        print('prev 4', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
                         # except IndexError:
                         #     raise IndexError(f'Index: {i} from range {samples_window} '
                         #                      f'len: {len(current_window)}\n'
                         #                      f'Index: {i + samples_offset} from range {samples_window} '
                         #                      f'len: {len(prev_window)}')
 
-                    if len(prev_window) > 0:
-                        print('prev', prev_window[0], prev_window[-1], len(prev_window))
-                    print('curr', current_window[0], current_window[-1], len(current_window))
+                if len(prev_window) > 0:
+                    print('prev 5', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
+                print('curr', current_window[0], current_window[len(current_window)//2], current_window[-1], len(current_window))
 
-                    if len(prev_window) == 0:
-                        for i in range(samples_window):
-                            prev_window.append(current_window[i])
-                    else:
-                        for i in range(samples_window):
-                            prev_window[i] = current_window[i]
+                if len(prev_window) == 0:
+                    for i in range(samples_window):
+                        prev_window.append(current_window[i])
+                else:
+                    for i in range(samples_window):
+                        prev_window[i] = current_window[i]
+                print('prev 1', prev_window[0], prev_window[len(prev_window)//2], prev_window[-1], len(prev_window))
+
                 k += 1
                 total_offset += samples_offset
 
