@@ -92,7 +92,8 @@ def peak_value_frequency(dataset: Collection, sampling_frequency: float) -> list
         peaks.append((loc, loc * sampling_frequency / (data.shape[0])))
     return peaks
 
-def windowing(filename: str, action_ID: float, label: float, size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3) -> str:
+def windowing(filename: str, action_ID: float, label: float,
+        start_offset: float = 0, size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3) -> str:
     """
     Function for making windows of a certain size, with an offset. A window is made and the features of the window
     are axtracted. The the window is slided the offset amount of seconds to the right and new window is made and
@@ -113,7 +114,10 @@ def windowing(filename: str, action_ID: float, label: float, size: float = 2, of
 
     Returns:
         str: The relative path of the output file. This file contains the extracted features.
-    """    
+    """
+
+    output_file = f'features_{action_ID}.txt'
+
     try:
         with open(filename) as f:
             # Check the file extension
@@ -155,9 +159,9 @@ def windowing(filename: str, action_ID: float, label: float, size: float = 2, of
         # Opening the data file again and skipping the header lines.
         k = 0
         with open(filename) as f:
-            for _ in range(5): f.readline()
+            for _ in range(5 + int(start_offset * sample_frequency)): f.readline()
             # Opening the output file; the extracted features will be put in the file
-            with open(f'features_{action_ID}.txt', 'a') as g:
+            with open(output_file, 'a') as g:
                 # While the end of the file is not yet reached
                 # while not_finished:
                 while k < 3:
@@ -211,7 +215,6 @@ def windowing(filename: str, action_ID: float, label: float, size: float = 2, of
                     time = np.arange(0, len(current_window) / sample_frequency, 1 / sample_frequency)
 
                     ffts_shifted = np.fft.fftshift(ffts)
-                    # Not necessary anymore
                     frequency = np.arange(-sample_frequency/2 + sample_frequency/(2*len(current_window)), #start
                                         sample_frequency/2 + sample_frequency/(2*len(current_window)), #stop
                                         sample_frequency/(len(current_window))) #interval
@@ -221,6 +224,7 @@ def windowing(filename: str, action_ID: float, label: float, size: float = 2, of
                     axes[1].plot(frequency, abs(ffts_shifted), label=['X', 'Y', 'Z'])
                     
                     k += 1
+
         axes[0].legend(loc='upper left')
         axes[0].set_title("Accelerometer data")
         axes[1].legend(loc='upper left')
@@ -231,3 +235,70 @@ def windowing(filename: str, action_ID: float, label: float, size: float = 2, of
         raise FileNotFoundError(f"File {filename} at the relative path not found!")
     except ValueError:
         raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")
+    
+    return output_file
+    
+def plot_accelerometer(filename: str, start_offset: float = 0, start: int = 1, stop: int = 3) -> None:
+    try:
+        with open(filename) as f:
+            # Check the file extension
+            file_extension = filename.split('.')[-1]
+            if file_extension == 'txt':
+                # Skip the header lines
+                for _ in range(5): f.readline() # TODO change the range back to 4!
+
+                # Find the sample frequency by dividing 1 by the difference in time of two samples
+                t0 = float(f.readline().strip().split(',')[0])
+                t1 = float(f.readline().strip().split(',')[0])
+                sample_frequency = round(1 / (t1 - t0), 2)
+            # If the file extension is not supported
+            else:
+                raise NotImplementedError(f"Filetype {filename.split('.')[-1]} is not implemented")
+            
+        with open(filename) as f:
+            data: list[list[float]] = []
+            for _ in range(5 + int(start_offset * sample_frequency)): f.readline()
+
+            not_finished = True
+            while not_finished:
+                line = f.readline().strip().split(',')
+                # The last line of the file is an empty string. When detected we exit the while loop
+                if line[0] == '':
+                    not_finished = False
+                    break
+                # Read samples_offset amount of samples and add these to the current window
+                data.append([])
+                for j in range(start, stop + 1):
+                    # print(i, i + samples_window - samples_offset, j, line, len(current_window), len(current_window[0]))
+                    data[-1].append(float(line[j]))
+
+
+        with open(filename) as f:
+            data2: list[list[float]] = []
+            for _ in range(5): f.readline()
+
+            not_finished = True
+            while not_finished:
+                line = f.readline().strip().split(',')
+                # The last line of the file is an empty string. When detected we exit the while loop
+                if line[0] == '':
+                    not_finished = False
+                    break
+                # Read samples_offset amount of samples and add these to the current window
+                data2.append([])
+                for j in range(start, stop + 1):
+                    # print(i, i + samples_window - samples_offset, j, line, len(current_window), len(current_window[0]))
+                    data2[-1].append(float(line[j]))
+            
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File {filename} at the relative path not found!")
+    except ValueError:
+        raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")
+    
+    time = np.arange(0, len(data) / sample_frequency, 1 / sample_frequency)
+    time2 = np.arange(0, len(data2) / sample_frequency, 1 / sample_frequency)
+    
+    fig, axes = plt.subplots(2, 1)
+    axes[1].plot(time, data)
+    axes[0].plot(time2, data2)
+    plt.show()

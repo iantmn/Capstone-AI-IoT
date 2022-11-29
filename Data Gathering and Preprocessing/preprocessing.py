@@ -3,7 +3,7 @@ import numpy as np
 import pprint as p
 import matplotlib.pyplot as plt
 
-from data_processing import fourier, windowing, cntrd_pwr, peak_value_frequency
+from data_processing import plot_accelerometer, windowing
 
 from collections.abc import Collection
 
@@ -43,7 +43,8 @@ def main() -> None:
     #     print("File not found!")
     # windowing(r'test-imu-export\testing\testing.3ia0sgrv.ingestion-77d7f974d5-xtfq4.json')
     # windowing(r'Accelerometer Data 0000.txt')
-    windowing(r'Accelerometer Data 2022-11-27 15-50-59.txt', 'Test', 'test')
+    # plot_accelerometer(r'Data files/Accelerometer Data X-axis.txt', 0.5)
+    windowing(r'Data files/Accelerometer Data X-axis.txt', 'Test', 'test', 0.5)
 
 
 if __name__ == "__main__":
