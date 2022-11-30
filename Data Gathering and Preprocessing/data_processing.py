@@ -19,8 +19,8 @@ def fourier(data: Collection, sample_frequency: float, epsilon: float = 0.1) -> 
     if not zero_padding == 0:
         data = np.append(data, np.zeros(shape=(zero_padding, 3))) # zero pad
     ffts = np.fft.fft2(data, axes=(-2, -2, -2))
-    peaks = peak_value_frequency(ffts, sample_frequency)
-    pwrs = cntrd_pwr(ffts, sample_frequency, epsilon)
+    peaks = peak_value_frequency(ffts[:np.shape(data)[0]//2], sample_frequency)
+    pwrs = cntrd_pwr(ffts[:np.shape(data)[0]//2], sample_frequency, epsilon)
     # print(peaks)
     # print(pwrs)
     return ffts, [peak + pwr for peak, pwr in zip(peaks, pwrs)]
@@ -221,7 +221,9 @@ def windowing(filename: str, action_ID: float, label: float,
 
                     fig, axes = plt.subplots(2, 1)
                     axes[0].plot(time, current_window, label=['X', 'Y', 'Z'])
-                    axes[1].plot(frequency, abs(ffts_shifted), label=['X', 'Y', 'Z'])
+                    # axes[1].plot(frequency, abs(ffts), label=['X', 'Y', 'Z'])
+                    axes[1].plot(abs(ffts), label=['X', 'Y', 'Z'])
+
                     
                     k += 1
 
