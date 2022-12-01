@@ -1,10 +1,12 @@
 # ------ import ------ #
-
 from sklearn.cluster import KMeans
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier as KNN
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import LabelEncoder
 
 # ------ Settings ------ #
 
@@ -12,12 +14,24 @@ n_clusters = 4
 
 # ------ Data import ------ #
 
-x = 0.3 * np.random.randn(1000, 3)
-print(x)
+x = 0.3 * np.random.randn(1000, 20)
+print(x.shape)
 
-# ------ Data split ------ #
+# ------ train, test split ------ #
 
 train, test = train_test_split(x, train_size=0.8)
+
+# ------ x, y split ------ #
+
+le = LabelEncoder()
+le.fit(train[:, 0])
+print(le.classes_)
+
+y_train = le.transform(train[:, 0])
+x_train = train[:, 1:]
+
+y_test = le.transform(test[:, 0])
+x_test = test[:, 1:]
 
 # ------ PCA ------ #
 
@@ -29,8 +43,8 @@ df_test = pca.fit_transform(test)
 
 model = KMeans(n_clusters=n_clusters)
 model.fit(df)
-label = model.predict(df)
-print(label)
+label = model.labels_
+# print(label)
 
 # ------ controid ------ #
 
@@ -64,3 +78,17 @@ axs[1, 1].scatter(df[:, :1], df[:, 1:], c=label)
 axs[1, 1].scatter(df_test[:, :1], df_test[:, 1:], c=pred)
 axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
 plt.show()
+
+
+# ------ KNN ------ #
+
+knn = KNN(n_neighbors=3)
+knn.fit(x_train, y_train)
+
+y_pred_train = knn.predict(x_train)
+accuracy_train = accuracy_score(y_train, y_pred_train)
+
+y_pred_test = knn.predict(x_test)
+accuracy_test = accuracy_score(y_test, y_pred_test)
+
+print(f"{accuracy_train=}, {accuracy_test=}")
