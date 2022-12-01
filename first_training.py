@@ -42,23 +42,25 @@ u_labels = np.unique(label)
 #     print(f"{data[0]=}, {data[1]=}, {label[i]=}")
 #     plt.scatter(data[0], data[1], label=label[i])
 
-fig, axs = plt.subplots(3)
+fig, axs = plt.subplots(2, 2)
 
-axs[0].scatter(df[:, :1], df[:, 1:], c=label)
-axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
+axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
+axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
 
 # ------ prediction test data ------ #
 
 # Make predictions on the test data
 pred = model.predict(df_test)
 
+axs[0, 1].scatter(df_test[:, :1], df_test[:, 1:], c='red')
+
 # create second plot which show new points whichout prediction
-axs[1].scatter(df[:, :1], df[:, 1:], c=label)
-axs[1].scatter(df_test[:, :1], df_test[:, 1:], c='red')
-axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
+axs[1, 0].scatter(df[:, :1], df[:, 1:], c=label)
+axs[1, 0].scatter(df_test[:, :1], df_test[:, 1:], c='red')
+axs[1, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
 
 # create third plot which show the predictions of the new points
-axs[2].scatter(df[:, :1], df[:, 1:], c=label)
-axs[2].scatter(df_test[:, :1], df_test[:, 1:], c=pred)
-axs[2].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
+axs[1, 1].scatter(df[:, :1], df[:, 1:], c=label)
+axs[1, 1].scatter(df_test[:, :1], df_test[:, 1:], c=pred)
+axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
 plt.show()
