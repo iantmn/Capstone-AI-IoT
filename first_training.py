@@ -7,15 +7,27 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
+import csv
+
+np.random.seed(42)
 
 # ------ Settings ------ #
 
-n_clusters = 4
+n_clusters = 2
 
 # ------ Data import ------ #
 
-x = 0.3 * np.random.randn(1000, 20)
-print(x.shape)
+
+x = []
+with open('Data Gathering and Preprocessing/features_Walking.txt') as csvfile:
+    reader = csv.reader(csvfile)
+    
+    for row in reader:
+        x.append(row)
+        
+# print(x)
+x = np.array(x)
+# print(x.shape)
 
 # ------ train, test split ------ #
 
@@ -24,20 +36,21 @@ train, test = train_test_split(x, train_size=0.8)
 # ------ x, y split ------ #
 
 le = LabelEncoder()
-le.fit(train[:, 0])
+le.fit(train[:, 0:1])
 print(le.classes_)
 
-y_train = le.transform(train[:, 0])
+y_train = le.transform(train[:, 0:1])
 x_train = train[:, 1:]
 
-y_test = le.transform(test[:, 0])
+y_test = le.transform(test[:, 0:1])
 x_test = test[:, 1:]
 
 # ------ PCA ------ #
 
 pca = PCA(2)
-df = pca.fit_transform(train)
-df_test = pca.fit_transform(test)
+print(x_train.shape)
+df = pca.fit_transform(x_train)
+df_test = pca.fit_transform(x_test)
 
 # ------ Training KMeans ------ #
 
