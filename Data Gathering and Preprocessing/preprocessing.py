@@ -3,7 +3,7 @@ import numpy as np
 import pprint as p
 import matplotlib.pyplot as plt
 
-from data_processing import plot_accelerometer, windowing, get_time_data
+from data_processing import Preprocessing
 
 from collections.abc import Collection
 
@@ -44,8 +44,8 @@ def main() -> None:
     # windowing(r'test-imu-export\testing\testing.3ia0sgrv.ingestion-77d7f974d5-xtfq4.json')
     # windowing(r'Accelerometer Data 0000.txt')
 
-    # mean, std, min_inter, max_inter = get_time_data(r'Data files/Accelerometer Data X-axis.txt')
-    mean, std, min_inter, max_inter = get_time_data(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-11-24.txt')
+    # mean, std, min_inter, max_inter = get_time_stats(r'Data files/Accelerometer Data X-axis.txt')
+    # mean, std, min_inter, max_inter = Preprocessing.get_time_stats(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-11-24.txt')
     # print(mean, std, min_inter, max_inter, std / mean * 1000) # Mean, std and the promillage of the std to the mean
     # plot_accelerometer(r'Data files/Accelerometer Data X-axis.txt', 0.5)
     # plot_accelerometer(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-11-24.txt', 0.5, 3)
@@ -53,8 +53,9 @@ def main() -> None:
     #             start_offset=0.5, stop_offset=3, size=1, offset=0.1, epsilon=0.03, do_plot=False)
     # windowing(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-11-24.txt', action_ID='Walking', label='stairs_up',
     #             start_offset=0.5, stop_offset=3, size=1, offset=0.1, epsilon=0.03, do_plot=False)
-    windowing(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-54-03.txt', action_ID='Walking', label='stairs_down',
-                start_offset=0.5, stop_offset=3, size=1, offset=0.1, epsilon=0.03, do_plot=False)
+    pre = Preprocessing('Walking')
+    pre.windowing(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-54-03.txt', label='stairs_down',
+                start_offset=0.5, stop_offset=3, size=40, offset=0.1, epsilon=0.03, do_plot=True)
 
 
 if __name__ == "__main__":
