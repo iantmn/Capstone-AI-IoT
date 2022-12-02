@@ -8,7 +8,7 @@ from collections.abc import Collection
 class Preprocessing():
     def __init__(self, action_ID: str = "") -> None:
         self.action_ID = action_ID
-        self.output_file = f'features_{action_ID}'
+        self.output_file = f'features_{action_ID}.txt'
         
     def fourier(self, data: Collection, sampling_frequency: float, epsilon: float = 0.1, zero_padding: int = 0) -> tuple[np.ndarray[float], list[float]]:
         """In the function: zeropadding, fft time data columns, spectral analysis
@@ -173,6 +173,11 @@ class Preprocessing():
         # ID of the datapoint, necessary for active learning
         current_ID = 0
 
+        # Counter for keeping the timestamps comparable with the timestamps list.
+        # This list is used when writing to the file to know when a window starts.
+        timestamp_counter = 0
+        timestamp_list: list[float] = []
+
         # This section lets you input y/n if you want to write the features to the file. Prevent adding the same data twice
         done = False
         while not done:
@@ -182,6 +187,23 @@ class Preprocessing():
                 done = True
             else:
                 print("Input not valid! Try again")
+
+        if write_to_file == 'y':
+            with open(self.output_file, 'a') as g:
+                # Build list of possible labels
+                full_header_features = [',acc_x_pk,acc_x_cn,acc_x_pw',
+                                        ',acc_y_pk,acc_y_cn,acc_y_pw',
+                                        ',acc_z_pk,acc_z_cn,acc_z_pw',
+                                        ',gyr_x_pk,gyr_x_cn,gyr_x_pw',
+                                        ',gyr_y_pk,gyr_y_cn,gyr_y_pw',
+                                        ',gyr_z_pk,gyr_z_cn,gyr_z_pw']
+                # Build the header
+                specified_header = 'ID,label,time'
+                for i in range(stop):
+                    specified_header += full_header_features[i]
+                
+                # Write the header to file
+                g.write(specified_header + '\n')
 
         try:
             sampling_frequency, last_point, size = self.get_sampling_frequency(input_file, start_offset, stop_offset)
@@ -207,26 +229,6 @@ class Preprocessing():
                 for _ in range(4 + int(start_offset * sampling_frequency)): f.readline()
                 # Opening the output file; the extracted features will be put in the file
                 with open(self.output_file, 'a') as g:
-                    # Build list of possible labels
-                    full_header_features = [',acc_x_pk,acc_x_cn,acc_x_pw',
-                                            ',acc_y_pk,acc_y_cn,acc_y_pw',
-                                            ',acc_z_pk,acc_z_cn,acc_z_pw',
-                                            ',gyr_x_pk,gyr_x_cn,gyr_x_pw',
-                                            ',gyr_y_pk,gyr_y_cn,gyr_y_pw',
-                                            ',gyr_z_pk,gyr_z_cn,gyr_z_pw']
-                    # Build the header
-                    specified_header = 'ID,label,time'
-                    for i in range(stop):
-                        specified_header += full_header_features[i]
-                    
-                    # Write the header to file
-                    g.write(specified_header + '\n')
-
-                    # Counter for keeping the timestamps comparable with the timestamps list.
-                    # This list is used when writing to the file to know when a window starts.
-                    timestamp_counter = 0
-                    timestamp_list: list[float] = []
-
                     # While the end of the file is not yet reached
                     while not_finished:
                     # while k < 1:
@@ -297,8 +299,8 @@ class Preprocessing():
                             
                             # print(features)
                                 
-                            # build a string of the feature data. The first element of the string is the label of the action
-                            features_list = [label]
+                            # build a string of the feature data. The first element of the string is the timestamp, pop this timestamp
+                            features_list = [timestamp_list.pop(0)]
                             for tup in features:
                                 for i, data in enumerate(tup):
                                     # We don't take the first value since it is an index representation 
@@ -308,11 +310,7 @@ class Preprocessing():
                             # Add the features to the file if write_to_file is 'y'
 
                             if write_to_file == 'y':
-                                g.write(',' + str(current_ID) + ',' + timestamp_list.pop(0) + ',' + ','.join(features_list) + '\n')
-
-                            # Time axis for the plots
-                            time = np.arange(start_offset + offset * k, start_offset + offset * k + len(current_window) / sampling_frequency,
-                                            1 / sampling_frequency)
+                                g.write(str(current_ID) + ',' + label + ',' + ','.join(features_list) + '\n')
 
                             # If we want to plot
                             if do_plot:
@@ -324,6 +322,11 @@ class Preprocessing():
                                 frequency_shift = np.arange(-sampling_frequency/2 + sampling_frequency/(2*padding), #start
                                                     sampling_frequency/2 + sampling_frequency/(2*padding), #stop
                                                     sampling_frequency/padding) #interval
+                                # Time axis for the plots
+                                time = np.arange(start_offset + offset * k, start_offset + offset * k + len(current_window)//sampling_frequency,
+                                                1 / sampling_frequency)
+
+                                # print(time)
 
                                 # Plotting specs
                                 fig, axes = plt.subplots(2, 1)
