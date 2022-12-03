@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import pandas as pd
 import math as m
 import matplotlib.pyplot as plt
 from collections.abc import Collection
@@ -144,7 +145,7 @@ class Preprocessing():
     def windowing(self, input_file: str, label: float,
             start_offset: float = 0, stop_offset: float = 0,
             size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3,
-            epsilon: float = 0.1, do_plot: bool = False) -> None:
+            epsilon: float = 0.1, do_plot: bool = False, do_scale = False) -> None:
         """
         Function for making windows of a certain size, with an offset. A window is made and the features of the window
         are axtracted. The the window is slided the offset amount of seconds to the right and new window is made and
@@ -342,6 +343,10 @@ class Preprocessing():
                             current_ID += 1
             # print(k)
             plt.show()
+
+            # If do_scale is set to True make a scaled version of the file as well
+            if do_scale is True:
+                self.SuperStandardScaler(self.output_file)
                         
         except FileNotFoundError:
             raise FileNotFoundError(f"File {self.input_file} at the relative path not found!")
@@ -386,6 +391,7 @@ class Preprocessing():
         # axes[0].plot(time2, data2)
         plt.show()
 
+
     @staticmethod
     def get_time_stats(input_file) -> tuple[float, float, float, float]:
         try:
@@ -411,3 +417,69 @@ class Preprocessing():
             raise FileNotFoundError(f"File {input_file} at the relative path not found!")
         except ValueError:
             raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")
+
+
+    def SuperStandardScaler(self, input_file: str) -> None:
+        """Scale the features with their respecitive scale. All centroid, peak and total power are put on the same scale.
+        By setting do_scale in windowing to True this function is called automatically, else build a object of Preprocessing in main
+        and execute Preprocessing.SuperStandardScaler(path)
+        TODO: implement possibility to also use gyroscope data
+
+        Args:
+            input_file (str): input file where the unscaled features are stored
+        """        
+        # First, manually build the data_array, this is because importing with a header and starting columns is a pain
+        with open(input_file) as f:
+            # Split the set in header, starting columns and actual data
+            header = np.array([f.readline().strip().split(',')], dtype='unicode')
+            columns = np.array([[0]*3], dtype='unicode')
+            data_array = np.array([[0]*(header.shape[1]-3)], dtype=float)
+            # Fill the data_array
+            while True:
+                line = f.readline().strip().split(',')
+                # Check if the last line was reached
+                if line[0] == '':
+                    break
+                else:
+                    # Split the line and add to the two np_arrays
+                    columns = np.append(columns, np.array([line[:3]], dtype='unicode'), axis=0)
+                    data_array = np.append(data_array, np.array([line[3:]], dtype=float), axis=0)
+
+        # Yeah append only works when the first element has the same size so i filled one with zeros, sue me
+        data_array = data_array[1:]
+        columns = columns[1:]
+
+        # Get amount of features and datapoints
+        features_amount = (data_array.shape[1])//3
+        datapoints_amount = data_array.shape[0] - 1
+
+        # If there are more then 3 sensors used, use two different sets.
+        if features_amount < 4:
+            # Case < 4 sensors used, max 9 features. Sum 
+            for i in range(features_amount):
+                sum_feature = 0
+                # Go trough every column with the same feature of different sensors and add them
+                for j in range(0, features_amount*3, 3):
+                    sum_feature += sum(data_array[:, i+j])
+                # Devide to get the mean
+                sum_feature = sum_feature / (3*datapoints_amount)
+
+                # Determine standard deviation of the feature
+                std_feature = 0
+                for j in range(0, features_amount*3, 3):
+                    for k in range(0, datapoints_amount):
+                        std_feature += (data_array[k, i+j] - sum_feature)**2
+                # Devide by n-1 and take root
+                std_feature = (std_feature/(3*datapoints_amount-1))**0.5
+                # Rescale the columns with their respective feature mean and std
+                for j in range(0, features_amount*3, 3):
+                    data_array[:, i+j] = (data_array[:, i+j] - sum_feature)/std_feature
+
+        # Merge the shitshow
+        data_array = data_array.astype('unicode')
+        data_array = np.append(columns, data_array, axis=1)
+        data_array = np.append(header, data_array, axis=0)
+
+        # Save as csv file
+        np.savetxt(f'features_{self.action_ID}_scaled.csv', data_array, fmt='%s', delimiter=',')
+

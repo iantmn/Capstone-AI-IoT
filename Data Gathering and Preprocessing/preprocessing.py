@@ -55,7 +55,7 @@ def main() -> None:
     #             start_offset=0.5, stop_offset=3, size=1, offset=0.1, epsilon=0.03, do_plot=False)
     pre = Preprocessing('Walking')
     pre.windowing(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-54-03.txt', label='stairs_down',
-                start_offset=0.5, stop_offset=3, size=40, offset=0.1, epsilon=0.03, do_plot=False)
+                start_offset=0.5, stop_offset=3, size=40, offset=0.1, epsilon=0.03, do_plot=False, do_scale = True)
 
 
 if __name__ == "__main__":
