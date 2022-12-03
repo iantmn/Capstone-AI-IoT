@@ -2,6 +2,8 @@
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.inspection import permutation_importance
+import numpy as np
+import pandas as pd
 
 # Function to extract how important features are based on the model (standard uses random forest)
 def computeFeatureImportance(df_X, df_Y, model=None, scoring=None):

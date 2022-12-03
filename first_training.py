@@ -1,6 +1,7 @@
 # ------ import ------ #
 from sklearn.cluster import KMeans
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
@@ -21,12 +22,20 @@ np.random.seed(42)
 
 n_clusters = 2
 
-do_knn = True
-do_svc = True
-do_rf = True
+# supervised learning
+do_knn = False
+do_svc = False
+do_rf = False
+
+# clustering
 do_kmeans_plot = False
+
+# gridsearch
 do_gridsearch_svc = False
-do_feature_importance = False
+do_gridsearch_rf = False
+
+# feature importance
+do_feature_importance = True
 
 # ------ Data import ------ #
 
@@ -166,9 +175,26 @@ if do_gridsearch_svc:
     model = SVC()
     clf = GSCV(model, parameters, verbose=3)
     clf.fit(x_train, y_train)
+    print("------------------")
+    print("Best parameters for gridsearch rf:")
+    print(clf.best_params_)
+    print(clf.best_score_)
+    
+# ------ gridsearch rf ------ #
+
+if do_gridsearch_rf:
+    parameters = {'n_estimators':[1, 10, 100, 1000], 'max_depth':[None], 'min_samples_split':[2, 4, 8]}
+    model = RF()
+    clf = GSCV(model, parameters, verbose=3)
+    clf.fit(x_train, y_train)
+    print("------------------")
+    print("Best parameters for gridsearch rf:")
+    print(clf.best_params_)
+    print(clf.best_score_)
     
 # ------ feature importance ------ #
     
 if do_feature_importance:
-    imp = computeFeatureImportance(x_train, y_train)
+    x_train_df = pd.DataFrame(x_train, columns=['x_1','x_2','x_3', 'y_1','y_2','y_3', 'z_1','z_2','z_3'])
+    imp = computeFeatureImportance(x_train_df, y_train)
     print(imp)
