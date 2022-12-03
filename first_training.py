@@ -1,3 +1,7 @@
+# ---------------------------------------------- #
+# Document for testing which models we are going to use. Exploration is being done and this document is not structured in a way that is suitable for production.
+# ---------------------------------------------- #
+
 # ------ import ------ #
 from sklearn.cluster import KMeans
 import numpy as np
@@ -10,10 +14,8 @@ from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier as RF
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV as GSCV
 from util import computeFeatureImportance
-
 import csv
 
 np.random.seed(42)
@@ -28,7 +30,7 @@ do_svc = False
 do_rf = False
 
 # clustering
-do_kmeans_plot = False
+do_kmeans_plot = True
 
 # gridsearch
 do_gridsearch_svc = False
@@ -38,8 +40,6 @@ do_gridsearch_rf = False
 do_feature_importance = True
 
 # ------ Data import ------ #
-
-
 x = []
 with open('Data Gathering and Preprocessing/features_Walking.txt') as csvfile:
     reader = csv.reader(csvfile)
@@ -96,33 +96,41 @@ if do_kmeans_plot:
 
     fig, axs = plt.subplots(2, 2)
 
+    axs[0, 0].title.set_text('Model')
     axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
-    axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
+    axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
 
     # ------ prediction test data ------ #
 
     # Make predictions on the test data
     pred = model.predict(df_test)
 
+    axs[0, 1].title.set_text('new data points')
     axs[0, 1].scatter(df_test[:, :1], df_test[:, 1:], c='red')
+    axs[0, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
 
     # create second plot which show new points whichout prediction
+    axs[1, 0].title.set_text('New data on model')
     axs[1, 0].scatter(df[:, :1], df[:, 1:], c=label)
     axs[1, 0].scatter(df_test[:, :1], df_test[:, 1:], c='red')
-    axs[1, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
+    axs[1, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
 
     # create third plot which show the predictions of the new points
+    axs[1, 1].title.set_text('result')
     axs[1, 1].scatter(df[:, :1], df[:, 1:], c=label)
     axs[1, 1].scatter(df_test[:, :1], df_test[:, 1:], c=pred)
-    axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
+    axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+    plt.legend()
     plt.show()
 
 
     fig, axs = plt.subplots(2)
+    axs[0].title.set_text('model result')
     axs[0].scatter(df[:, :1], df[:, 1:], c=label)
-    axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
+    axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+    axs[1].title.set_text('Actual result')
     axs[1].scatter(df[:, :1], df[:, 1:], c=y_train, label=('stairs_up', 'stairs_down'))
-    axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='s')
+    axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
     plt.legend()
     plt.show()
 
