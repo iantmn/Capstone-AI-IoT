@@ -15,6 +15,7 @@ from sklearn.ensemble import RandomForestClassifier as RF
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV as GSCV
+from sklearn.model_selection import RandomizedSearchCV as RSCV
 from util import computeFeatureImportance
 import csv
 
@@ -30,11 +31,15 @@ do_svc = False
 do_rf = False
 
 # clustering
-do_kmeans_plot = True
+do_kmeans_plot = False
 
 # gridsearch
 do_gridsearch_svc = False
-do_gridsearch_rf = False
+do_gridsearch_rf = True
+
+# randomsearch
+do_randomsearch_svc = False
+do_randomsearch_rf = True
 
 # feature importance
 do_feature_importance = True
@@ -184,9 +189,10 @@ if do_gridsearch_svc:
     clf = GSCV(model, parameters, verbose=3)
     clf.fit(x_train, y_train)
     print("------------------")
-    print("Best parameters for gridsearch rf:")
+    print("Best parameters for gridsearch svc:")
     print(clf.best_params_)
     print(clf.best_score_)
+    
     
 # ------ gridsearch rf ------ #
 
@@ -197,6 +203,30 @@ if do_gridsearch_rf:
     clf.fit(x_train, y_train)
     print("------------------")
     print("Best parameters for gridsearch rf:")
+    print(clf.best_params_)
+    print(clf.best_score_)
+    
+# ------ randomsearch svc ------ #
+
+if do_randomsearch_svc:
+    parameters = {'kernel':('linear', 'rbf'), 'C':[0.001, 0.01, 0.1, 1, 10, 100]}
+    model = SVC()
+    clf = RSCV(model, parameters, verbose=3)
+    clf.fit(x_train, y_train)
+    print("------------------")
+    print("Best parameters for randomsearch svc:")
+    print(clf.best_params_)
+    print(clf.best_score_)
+    
+# ------ randomsearch rf ------ #    
+
+if do_randomsearch_rf:
+    parameters = {'n_estimators':[1, 10, 100, 1000], 'max_depth':[None], 'min_samples_split':[2, 4, 8]}
+    model = RF()
+    clf = RSCV(model, parameters, verbose=3)
+    clf.fit(x_train, y_train)
+    print("------------------")
+    print("Best parameters for randomsearch rf:")
     print(clf.best_params_)
     print(clf.best_score_)
     
