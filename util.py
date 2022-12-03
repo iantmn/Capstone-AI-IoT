@@ -1,5 +1,4 @@
 # module for utility functions
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.inspection import permutation_importance
 import numpy as np
