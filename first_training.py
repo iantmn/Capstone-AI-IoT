@@ -21,7 +21,6 @@ from sklearn.ensemble import BaggingClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import plot_tree
 from sklearn.linear_model import SGDClassifier
-from sklearn import model_selection
 from sklearn.naive_bayes import GaussianNB
 
 np.random.seed(42)
@@ -33,7 +32,12 @@ n_clusters = 3
 # supervised learning
 do_knn = False
 do_svc = False
+
 do_rf = True
+plot_rf = False
+plot_rf_tree = False
+
+
 do_dt = False
 do_bagged_class = False
 do_gd = False
@@ -51,7 +55,8 @@ do_randomsearch_svc = False
 do_randomsearch_rf = False
 
 # feature importance
-do_feature_importance = False
+do_feature_importance = True
+
 # ------ Data import ------ #
 # x = []
 # with open('Data Gathering and Preprocessing/features_Walking_scaled.csv') as csvfile:
@@ -90,39 +95,43 @@ print("Using PCA...")
 pca = PCA(2)
 df = pca.fit_transform(x_train)
 df_test = pca.fit_transform(x_test)
+# df = pd.DataFrame(df)
+# df_test = pd.DataFrame(df_test)
+print(df)
 
+# ------ Training KMeans ------ #
+
+print("Training KMeans...")
+model = KMeans(n_clusters=n_clusters)
+model.fit(df)
+label = model.labels_
+# print(label)
+
+# ------ centroid ------ #
+
+print("Calculating centroids...")
+centroids = model.cluster_centers_
+u_labels = np.unique(label)
+
+pred = model.predict(df_test)
 
 if do_kmeans_plot:
-    # ------ Training KMeans ------ #
-
-    print("Training KMeans...")
-    model = KMeans(n_clusters=n_clusters)
-    model.fit(df)
-    label = model.labels_
-    # print(label)
-
-    # ------ controid ------ #
-
-    print("Calculating centroids...")
-    centroids = model.cluster_centers_
-    u_labels = np.unique(label)
-
     # ------ plot ------ #
     # for i, data in enumerate(x):
     #     print(f"{data[0]=}, {data[1]=}, {label[i]=}")
     #     plt.scatter(data[0], data[1], label=label[i])
 
     print("Plotting model and test data...")
+    
     fig, axs = plt.subplots(2, 2)
 
     axs[0, 0].title.set_text('Model')
     axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
     axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-
+        
     # ------ prediction test data ------ #
 
     # Make predictions on the test data
-    pred = model.predict(df_test)
 
     axs[0, 1].title.set_text('new data points')
     axs[0, 1].scatter(df_test[:, :1], df_test[:, 1:], c='red')
@@ -147,10 +156,11 @@ if do_kmeans_plot:
     axs[0].title.set_text('model result')
     axs[0].scatter(df[:, :1], df[:, 1:], c=label)
     axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+    
     axs[1].title.set_text('Actual result')
-    axs[1].scatter(df[:, :1], df[:, 1:], c=y_train, label=('stairs_up', 'stairs_down'))
+    axs[1].scatter(df[:, :1], df[:, 1:], c=y_train)
+    axs[1].legend()
     axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-    plt.legend()
     plt.show()
 
 # ------ knn ------ #
@@ -184,7 +194,7 @@ if do_svc:
 # ------ random forest ------ #
 
 if do_rf:
-    rf = RF()
+    rf = RF(oob_score=True)
     rf.fit(x_train, y_train)
 
     y_pred_train = rf.predict(x_train)
@@ -194,6 +204,33 @@ if do_rf:
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
     print(f"rf: {accuracy_train=}, {accuracy_test=}")
+    if plot_rf:
+        fig, axs = plt.subplots(2, 2)
+        axs[0, 0].title.set_text('kmeans model result')
+        axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
+        axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        
+        axs[0, 1].title.set_text('Actual result')
+        axs[0, 1].scatter(df[:, :1], df[:, 1:], c=y_train)
+        axs[0, 1].legend()
+        axs[0, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        
+        axs[1, 0].title.set_text('rf model result')
+        axs[1, 0].scatter(df[:, :1], df[:, 1:], c=y_pred_train)
+        axs[1, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        
+        axs[1, 1].title.set_text('Actual result')
+        axs[1, 1].scatter(df[:, :1], df[:, 1:], c=y_train)
+        axs[1, 1].legend()
+        axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        plt.show()
+
+    if plot_rf_tree:
+        estimator = rf.estimators_[5]
+        
+        fig = plt.figure(figsize=(15, 10))
+        plot_tree(estimator, filled=True, feature_names=x.columns, class_names=le.classes_, impurity=True, rounded=True)
+        plt.show()
     
 # ------ decision tree ------ #
 
