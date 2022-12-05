@@ -33,7 +33,7 @@ do_knn = False
 do_svc = False
 
 # random forest
-do_rf = True
+do_rf = False
 plot_rf = False
 plot_rf_tree = False
 
@@ -97,7 +97,7 @@ df = pca.fit_transform(x_train)
 df_test = pca.fit_transform(x_test)
 # df = pd.DataFrame(df)
 # df_test = pd.DataFrame(df_test)
-print(df)
+# print(df)
 
 # ------ Training KMeans ------ #
 
