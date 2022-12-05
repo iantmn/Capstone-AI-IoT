@@ -1,2 +1,3 @@
 data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-11-24.txt
 data-lopen/Data Timo/Accelerometer Data 2022-11-29 11-38-43.txt
+data-lopen/Alan data/Walking-20221201T092023Z-001/Walking/Accelerometer_Data_walking_29-11[1].txt

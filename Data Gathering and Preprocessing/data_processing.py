@@ -213,7 +213,7 @@ class Preprocessing():
                 else:
                     make_header = False
                     for line in checkfile:
-                        last_index = int(line.strip().split(',')[0])
+                        last_index = int(line.strip().split(',')[0]) + 1
         except FileNotFoundError:
             make_header = True
         
@@ -235,7 +235,7 @@ class Preprocessing():
                 g.write(specified_header + '\n')
 
         try:
-            sampling_frequency, last_point, size = self.get_sampling_frequency(input_file, start_offset, stop_offset)
+            sampling_frequency, last_point, size = self.get_sampling_frequency(input_file, start_offset, stop_offset, size)
 
             # Variable for the previous window and the current window
             prev_window: list[list[float]] = []
@@ -255,6 +255,7 @@ class Preprocessing():
             # Opening the data file again and skipping the header lines.
             k = 0
             with open(input_file) as f:
+                print(start_offset, stop_offset, size)
                 for _ in range(4 + int(start_offset * sampling_frequency)): f.readline()
                 # Opening the output file; the extracted features will be put in the file
                 with open(self.output_file, 'a') as g:
@@ -337,7 +338,6 @@ class Preprocessing():
                                         features_list.append(str(data))
                             # print(features_list)
                             # Add the features to the file if write_to_file is 'y'
-
                             if write_to_file == 'y':
                                 g.write(str(current_ID + last_index) + ',' + label + ',' + ','.join(features_list) + '\n')
 
