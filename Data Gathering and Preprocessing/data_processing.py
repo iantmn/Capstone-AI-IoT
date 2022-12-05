@@ -173,23 +173,51 @@ class Preprocessing():
 
         # ID of the datapoint, necessary for active learning
         current_ID = 0
+        last_index = 0
 
         # Counter for keeping the timestamps comparable with the timestamps list.
         # This list is used when writing to the file to know when a window starts.
         timestamp_counter = 0
         timestamp_list: list[float] = []
 
+        already_processed = False
+        try:
+            with open('processed_data_files.txt') as f:
+                for line in f:
+                    if line.strip() == input_file:
+                        already_processed = True
+                        break
+        except FileNotFoundError:
+            pass
+
         # This section lets you input y/n if you want to write the features to the file. Prevent adding the same data twice
         done = False
         while not done:
+            if already_processed:
+                print('The file is already processed at least once.\n')
             write_to_file = input(f"Do you want to save the extracted features '{label}' for '{self.action_ID}'? y/n\n")
             # Check if the input is valid
-            if write_to_file == 'y' or write_to_file == 'n':
+            if write_to_file == 'y':
+                done = True
+                with open('processed_data_files.txt', 'a') as f:
+                    f.write(f"{input_file}\n")
+            elif write_to_file == 'n':
                 done = True
             else:
                 print("Input not valid! Try again")
 
-        if write_to_file == 'y':
+        try:
+            with open(self.output_file, 'r') as checkfile:
+                if checkfile.readline().strip() == '':
+                    make_header = True
+                else:
+                    make_header = False
+                    for line in checkfile:
+                        last_index = int(line.strip().split(',')[0])
+        except FileNotFoundError:
+            make_header = True
+        
+        if write_to_file == 'y' and make_header:
             with open(self.output_file, 'a') as g:
                 # Build list of possible labels
                 full_header_features = [',acc_x_pk,acc_x_cn,acc_x_pw',
@@ -311,7 +339,7 @@ class Preprocessing():
                             # Add the features to the file if write_to_file is 'y'
 
                             if write_to_file == 'y':
-                                g.write(str(current_ID) + ',' + label + ',' + ','.join(features_list) + '\n')
+                                g.write(str(current_ID + last_index) + ',' + label + ',' + ','.join(features_list) + '\n')
 
                             # If we want to plot
                             if do_plot:
@@ -453,26 +481,48 @@ class Preprocessing():
         features_amount = (data_array.shape[1])//3
         datapoints_amount = data_array.shape[0] - 1
 
+        if features_amount > 6:
+            raise ValueError('You have used more than 6 sensors, we have not yet implemented ')
+
         # If there are more then 3 sensors used, use two different sets.
-        if features_amount < 4:
-            # Case < 4 sensors used, max 9 features. Sum 
-            for i in range(features_amount):
+        # Case < 4 sensors used, max 9 features. Sum 
+        for i in range(min(3, features_amount)):
+            sum_feature = 0
+            # Go trough every column with the same feature of different sensors and add them
+            for j in range(0, features_amount*3, 3):
+                sum_feature += sum(data_array[:, i+j])
+            # Devide to get the mean
+            sum_feature = sum_feature / (3*datapoints_amount)
+
+            # Determine standard deviation of the feature
+            std_feature = 0
+            for j in range(0, features_amount*3, 3):
+                for k in range(0, datapoints_amount):
+                    std_feature += (data_array[k, i+j] - sum_feature)**2
+            # Devide by n-1 and take root
+            std_feature = (std_feature/(3*datapoints_amount-1))**0.5
+            # Rescale the columns with their respective feature mean and std
+            for j in range(0, features_amount*3, 3):
+                data_array[:, i+j] = (data_array[:, i+j] - sum_feature)/std_feature
+        # if there are more then 3 sensors used, we have gyroscope sensors as well.
+        if features_amount > 3:
+            for i in range(0, min(3, features_amount-3)):
                 sum_feature = 0
                 # Go trough every column with the same feature of different sensors and add them
-                for j in range(0, features_amount*3, 3):
+                for j in range(9, (features_amount-3)*3+9, 3):
                     sum_feature += sum(data_array[:, i+j])
                 # Devide to get the mean
                 sum_feature = sum_feature / (3*datapoints_amount)
 
                 # Determine standard deviation of the feature
                 std_feature = 0
-                for j in range(0, features_amount*3, 3):
-                    for k in range(0, datapoints_amount):
+                for j in range(9, (features_amount-3)*3+9, 3):
+                    for k in range(0, datapoints_amount-3):
                         std_feature += (data_array[k, i+j] - sum_feature)**2
                 # Devide by n-1 and take root
                 std_feature = (std_feature/(3*datapoints_amount-1))**0.5
                 # Rescale the columns with their respective feature mean and std
-                for j in range(0, features_amount*3, 3):
+                for j in range(9, (features_amount-3)*3+9, 3):
                     data_array[:, i+j] = (data_array[:, i+j] - sum_feature)/std_feature
 
         # Merge the shitshow
