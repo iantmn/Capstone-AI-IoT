@@ -1,6 +1,6 @@
-# ---------------------------------------------- #
-# Document for testing which models we are going to use. Exploration is being done and this document is not structured in a way that is suitable for production.
-# ---------------------------------------------- #
+"""
+This document is for testing which models we are going to use. Exploration is being done and this document is not structured in a way that is suitable for production.
+"""
 
 # ------ import ------ #
 from sklearn.cluster import KMeans
@@ -19,21 +19,25 @@ from sklearn.model_selection import RandomizedSearchCV as RSCV
 from util import computeFeatureImportance
 from sklearn.ensemble import BaggingClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import plot_tree
+from sklearn.linear_model import SGDClassifier
 from sklearn import model_selection
-import csv
+from sklearn.naive_bayes import GaussianNB
 
 np.random.seed(42)
 
 # ------ Settings ------ #
 
-n_clusters = 2
+n_clusters = 3
 
 # supervised learning
-do_knn = False
-do_svc = False
+do_knn = True
+do_svc = True
 do_rf = True
-do_dt = False
-do_bagged_dt = False
+do_dt = True
+do_bagged_class = True
+do_gd = True
+do_gnb = True
 
 # clustering
 do_kmeans_plot = False
@@ -48,7 +52,6 @@ do_randomsearch_rf = False
 
 # feature importance
 do_feature_importance = False
-
 # ------ Data import ------ #
 # x = []
 # with open('Data Gathering and Preprocessing/features_Walking_scaled.csv') as csvfile:
@@ -57,17 +60,21 @@ do_feature_importance = False
 #     for row in reader:
 #         x.append(row)
 
+print("Importing data...")
 x = pd.read_csv(r'Data Gathering and Preprocessing/features_Walking_scaled.csv')
+print("Data imported")
 
 # ------ train, test split ------ #
 
+print("Splitting data into train and test...")
 train, test = train_test_split(x, train_size=0.8)
 
 # ------ x, y split ------ #
 
+print("Splitting data into x and y...")
 le = LabelEncoder()
 le.fit(train["label"])
-print(le.classes_)
+print(f"Classes: {le.classes_}")
 
 y_train = le.transform(train["label"])
 x_train = train.copy()
@@ -79,8 +86,8 @@ x_test = x_test.drop(["label", "time", "ID"], axis=1)
 
 # ------ PCA ------ #
 
+print("Using PCA...")
 pca = PCA(2)
-print(x_train.shape)
 df = pca.fit_transform(x_train)
 df_test = pca.fit_transform(x_test)
 
@@ -88,6 +95,7 @@ df_test = pca.fit_transform(x_test)
 if do_kmeans_plot:
     # ------ Training KMeans ------ #
 
+    print("Training KMeans...")
     model = KMeans(n_clusters=n_clusters)
     model.fit(df)
     label = model.labels_
@@ -95,6 +103,7 @@ if do_kmeans_plot:
 
     # ------ controid ------ #
 
+    print("Calculating centroids...")
     centroids = model.cluster_centers_
     u_labels = np.unique(label)
 
@@ -103,6 +112,7 @@ if do_kmeans_plot:
     #     print(f"{data[0]=}, {data[1]=}, {label[i]=}")
     #     plt.scatter(data[0], data[1], label=label[i])
 
+    print("Plotting model and test data...")
     fig, axs = plt.subplots(2, 2)
 
     axs[0, 0].title.set_text('Model')
@@ -132,7 +142,7 @@ if do_kmeans_plot:
     plt.legend()
     plt.show()
 
-
+    print("plotting model vs actual...")
     fig, axs = plt.subplots(2)
     axs[0].title.set_text('model result')
     axs[0].scatter(df[:, :1], df[:, 1:], c=label)
@@ -171,7 +181,7 @@ if do_svc:
 
     print(f"svc: {accuracy_train=}, {accuracy_test=}")
     
-# ------ random forrest ------ #
+# ------ random forest ------ #
 
 if do_rf:
     rf = RF()
@@ -196,15 +206,20 @@ if do_dt:
 
     y_pred_test = dt.predict(x_test)
     accuracy_test = accuracy_score(y_test, y_pred_test)
+    
+    fig = plt.figure(figsize=(25,20))
+    plot_tree(dt, filled=True)
+
 
     print(f"dt: {accuracy_train=}, {accuracy_test=}")
 
-# ------ bagged decision tree ------ #
+# ------ bagged classifier ------ #
 
-if do_bagged_dt:
-    dt = DecisionTreeClassifier()
-    num_trees = 100
-    model = BaggingClassifier(base_estimator=dt, n_estimator=num_trees, random_state=42)
+if do_bagged_class:
+    chosen = SVC()
+    num_models = 100
+    model = BaggingClassifier(base_estimator=chosen, n_estimators=num_models, random_state=42)
+    
     model.fit(x_train, y_train)
     y_pred_train = model.predict(x_train)
     accuracy_train = accuracy_score(y_train, y_pred_train)
@@ -213,8 +228,37 @@ if do_bagged_dt:
     accuracy_test = accuracy_score(y_test, y_pred_test)
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
-    print(f"dt: {accuracy_train=}, {accuracy_test=}")
-  
+    print(f"bagged {str(chosen)}: {accuracy_train=}, {accuracy_test=}")
+
+# ------ gradient descent ------ #
+
+if do_gd:
+    gd = SGDClassifier()
+    gd.fit(x_train, y_train)
+
+    y_pred_train = gd.predict(x_train)
+    accuracy_train = accuracy_score(y_train, y_pred_train)
+
+    y_pred_test = gd.predict(x_test)
+    accuracy_test = accuracy_score(y_test, y_pred_test)
+
+    print(f"sgd: {accuracy_train=}, {accuracy_test=}")
+
+# ------ guassian naive Bayes ------ #
+
+if do_gnb:
+    nb = GaussianNB()
+    nb.fit(x_train, y_train)
+
+    y_pred_train = nb.predict(x_train)
+    accuracy_train = accuracy_score(y_train, y_pred_train)
+
+    y_pred_test = nb.predict(x_test)
+    accuracy_test = accuracy_score(y_test, y_pred_test)
+
+    print(f"gaussian nb: {accuracy_train=}, {accuracy_test=}")
+
+
 # ------ gridsearch svc ------ #
     
 if do_gridsearch_svc:
@@ -263,10 +307,12 @@ if do_randomsearch_rf:
     print("Best parameters for randomsearch rf:")
     print(clf.best_params_)
     print(clf.best_score_)
-    
+
 # ------ feature importance ------ #
     
 if do_feature_importance:
-    x_train_df = pd.DataFrame(x_train, columns=['x_1','x_2','x_3', 'y_1','y_2','y_3', 'z_1','z_2','z_3'])
-    imp = computeFeatureImportance(x_train_df, y_train)
+    print("calculating feature importance...")
+    imp = computeFeatureImportance(x_train, y_train)
+    total = imp["feature_importance"].sum()
+    imp["feature_importance"] = imp["feature_importance"] / total
     print(imp)

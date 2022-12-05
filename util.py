@@ -7,11 +7,11 @@ import pandas as pd
 # Function to extract how important features are based on the model (standard uses random forest)
 def computeFeatureImportance(df_X, df_Y, model=None, scoring=None):
     if model is None:
-        model = RandomForestClassifier(random_state=0)
+        model = RandomForestClassifier(random_state=42)
     print("Computer feature importance using", model)
     model.fit(df_X, df_Y.squeeze())
     result = permutation_importance(model, df_X, df_Y,
-                                    n_repeats=10, random_state=0, scoring=scoring)
+                                    n_repeats=10, random_state=42, scoring=scoring)
     feat_names = df_X.columns.copy()
     feat_ims = np.array(result.importances_mean)
     sorted_ims_idx = np.argsort(feat_ims)[::-1]
