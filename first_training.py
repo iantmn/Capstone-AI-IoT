@@ -17,6 +17,9 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV as GSCV
 from sklearn.model_selection import RandomizedSearchCV as RSCV
 from util import computeFeatureImportance
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn import model_selection
 import csv
 
 np.random.seed(42)
@@ -28,33 +31,33 @@ n_clusters = 2
 # supervised learning
 do_knn = False
 do_svc = False
-do_rf = False
+do_rf = True
+do_dt = False
+do_bagged_dt = False
 
 # clustering
 do_kmeans_plot = False
 
 # gridsearch
 do_gridsearch_svc = False
-do_gridsearch_rf = True
+do_gridsearch_rf = False
 
 # randomsearch
 do_randomsearch_svc = False
-do_randomsearch_rf = True
+do_randomsearch_rf = False
 
 # feature importance
-do_feature_importance = True
+do_feature_importance = False
 
 # ------ Data import ------ #
-x = []
-with open('Data Gathering and Preprocessing/features_Walking.txt') as csvfile:
-    reader = csv.reader(csvfile)
+# x = []
+# with open('Data Gathering and Preprocessing/features_Walking_scaled.csv') as csvfile:
+#     reader = csv.DictReader(csvfile)
     
-    for row in reader:
-        x.append(row)
-        
-# print(x)
-x = np.array(x)
-# print(x.shape)
+#     for row in reader:
+#         x.append(row)
+
+x = pd.read_csv(r'Data Gathering and Preprocessing/features_Walking_scaled.csv')
 
 # ------ train, test split ------ #
 
@@ -63,15 +66,16 @@ train, test = train_test_split(x, train_size=0.8)
 # ------ x, y split ------ #
 
 le = LabelEncoder()
-le.fit(train[:, 0:1])
+le.fit(train["label"])
 print(le.classes_)
 
-y_train = le.transform(train[:, 0:1])
-x_train = train[:, 1:]
+y_train = le.transform(train["label"])
+x_train = train.copy()
+x_train = x_train.drop(["label", "time", "ID"], axis=1)
 
-y_test = le.transform(test[:, 0:1])
-x_test = test[:, 1:]
-
+y_test = le.transform(test["label"])
+x_test = test.copy()
+x_test = x_test.drop(["label", "time", "ID"], axis=1)
 
 # ------ PCA ------ #
 
@@ -181,6 +185,36 @@ if do_rf:
 
     print(f"rf: {accuracy_train=}, {accuracy_test=}")
     
+# ------ decision tree ------ #
+
+if do_dt:
+    dt = DecisionTreeClassifier()
+    dt.fit(x_train, y_train)
+
+    y_pred_train = dt.predict(x_train)
+    accuracy_train = accuracy_score(y_train, y_pred_train)
+
+    y_pred_test = dt.predict(x_test)
+    accuracy_test = accuracy_score(y_test, y_pred_test)
+
+    print(f"dt: {accuracy_train=}, {accuracy_test=}")
+
+# ------ bagged decision tree ------ #
+
+if do_bagged_dt:
+    dt = DecisionTreeClassifier()
+    num_trees = 100
+    model = BaggingClassifier(base_estimator=dt, n_estimator=num_trees, random_state=42)
+    model.fit(x_train, y_train)
+    y_pred_train = model.predict(x_train)
+    accuracy_train = accuracy_score(y_train, y_pred_train)
+
+    y_pred_test = model.predict(x_test)
+    accuracy_test = accuracy_score(y_test, y_pred_test)
+    accuracy_test = accuracy_score(y_test, y_pred_test)
+
+    print(f"dt: {accuracy_train=}, {accuracy_test=}")
+  
 # ------ gridsearch svc ------ #
     
 if do_gridsearch_svc:
