@@ -1,7 +1,6 @@
 """
 This document is for testing which models we are going to use. Exploration is being done and this document is not structured in a way that is suitable for production.
 """
-
 # ------ import ------ #
 from sklearn.cluster import KMeans
 import numpy as np
@@ -33,6 +32,7 @@ n_clusters = 3
 do_knn = False
 do_svc = False
 
+# random forest
 do_rf = True
 plot_rf = False
 plot_rf_tree = False
