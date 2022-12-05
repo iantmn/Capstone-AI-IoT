@@ -173,6 +173,7 @@ class Preprocessing():
 
         # ID of the datapoint, necessary for active learning
         current_ID = 0
+        last_index = 0
 
         # Counter for keeping the timestamps comparable with the timestamps list.
         # This list is used when writing to the file to know when a window starts.
@@ -211,6 +212,8 @@ class Preprocessing():
                     make_header = True
                 else:
                     make_header = False
+                    for line in checkfile:
+                        last_index = int(line.strip().split(',')[0])
         except FileNotFoundError:
             make_header = True
         
@@ -336,7 +339,7 @@ class Preprocessing():
                             # Add the features to the file if write_to_file is 'y'
 
                             if write_to_file == 'y':
-                                g.write(str(current_ID) + ',' + label + ',' + ','.join(features_list) + '\n')
+                                g.write(str(current_ID + last_index) + ',' + label + ',' + ','.join(features_list) + '\n')
 
                             # If we want to plot
                             if do_plot:
