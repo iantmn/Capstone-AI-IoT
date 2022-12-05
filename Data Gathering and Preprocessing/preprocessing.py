@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from data_processing import Preprocessing
 
-from collections.abc import Collection
+from collections.abc import Collection, Iterable
 
 def main() -> None:
     # try:
@@ -53,10 +53,20 @@ def main() -> None:
     #             start_offset=0.5, stop_offset=3, size=1, offset=0.1, epsilon=0.03, do_plot=False)
     # windowing(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-11-24.txt', action_ID='Walking', label='stairs_up',
     #             start_offset=0.5, stop_offset=3, size=1, offset=0.1, epsilon=0.03, do_plot=False)
+    empty_files(['features_Walking.csv', 'features_Walking_scaled.csv', 'processed_data_files.txt'])
     pre = Preprocessing('Walking')
-    pre.windowing(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-54-03.txt', label='stairs_down',
-                start_offset=0.5, stop_offset=3, size=40, offset=0.1, epsilon=0.03, do_plot=False, do_scale = True)
+    pre.windowing(r"data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-11-24.txt", label='stairs_up',
+                start_offset=0.5, stop_offset=3, size=3, offset=0.2, epsilon=0.03, do_plot=False, do_scale = False)
+    pre.windowing(r"data-lopen/Data Timo/Accelerometer Data 2022-11-29 11-38-43.txt", label='stairs_down',
+                start_offset=0.5, stop_offset=3, size=3, offset=0.2, epsilon=0.03, do_plot=False, do_scale = True)
+
+    # pre.SuperStandardScaler()
 
 
+def empty_files(files: Iterable[str]) -> None:
+    for file in files:
+        with open(file, 'w') as f:
+            pass
+    
 if __name__ == "__main__":
     main()
