@@ -1,0 +1,53 @@
+from sklearn.ensemble import RandomForestClassifier
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+# import imageio as io
+import os
+
+class Active_learning():
+    def __init__(self, data_file: str):
+        self.data_file = data_file
+        self.datapd = self.get_sensor_data(data_file)
+        self.model = self.determine_model()
+        self.X_pool = self.datapd[]
+        self.y_pool = 
+        self.unknown_indexes = []
+        self.known_indexes = []
+        
+    def determine_model(self):
+        return RandomForestClassifier(max_depth=9, criterion='gini')
+        
+    def get_sensor_data(data_file: str):
+        return pd.read_csv(data_file)
+
+    def define_activities(self):
+        activities = {}
+        activity_list = []
+        ask_activity = input("Please input expected activities. Type X when you're done. ")
+        while ask_activity != "X":
+            activity_list.append(ask_activity)
+            ask_activity = input()
+        for i in range(len(activity_list)):
+            activities[activity_list[i]] = i + 1
+        print(f"These are your activities: {activity_list}. If you want to make any changes, run this cell again. ")
+        # done = input("Type Y if you're done, or N if you want to add more activities. ")
+        # if done == "N":
+            # ask_activity = input() 
+        return activities
+
+    def find_most_ambiguous(self, model, X_pool, unknown_indexes):
+        '''Finds the most ambiguous sample. The unlabeled sample with the greatest
+            difference between most and second most probably classes is the most ambiguous.
+            Returns only the id of this sample'''
+        preds = self.model.predict_proba(X_pool.iloc[unknown_indexes])
+        sorted_preds = np.sort(preds, axis=1)
+        lowest_margin = 1
+        lowest_margin_sample_id = None
+        for unknown_sample in X_pool.iloc[unknown_indexes]:
+            margin = sorted_preds[unknown_sample['id'], -1] - sorted_preds[unknown_sample[id_feature], -2]
+            if margin < lowest_margin:
+                lowest_margin_sample_id = unknown_sample['id']
+        # most_ambiguous = X_pool.iloc[lowest_margin_sample_id]
+        return lowest_margin_sample_id
