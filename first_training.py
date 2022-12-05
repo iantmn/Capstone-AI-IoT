@@ -31,13 +31,13 @@ np.random.seed(42)
 n_clusters = 3
 
 # supervised learning
-do_knn = True
-do_svc = True
+do_knn = False
+do_svc = False
 do_rf = True
-do_dt = True
-do_bagged_class = True
-do_gd = True
-do_gnb = True
+do_dt = False
+do_bagged_class = False
+do_gd = False
+do_gnb = False
 
 # clustering
 do_kmeans_plot = False

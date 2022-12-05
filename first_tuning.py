@@ -1,9 +1,6 @@
 """
 This document is for testing which models we are going to use. Exploration is being done and this document is not structured in a way that is suitable for production.
 """
-"""
-This document is for testing which models we are going to use. Exploration is being done and this document is not structured in a way that is suitable for production.
-"""
 
 # ------ import ------ #
 import numpy as np
@@ -87,7 +84,7 @@ if do_gridsearch_knn:
 # ------ gridsearch rf ------ #
 
 if do_gridsearch_rf:
-    parameters = {'n_estimators': range(1, 101), 'max_depth': range(1, 101), 'criterion':('gini', 'entropy')}
+    parameters = {'n_estimators': range(1, 101), 'max_depth': range(1, 21), 'criterion':('gini', 'entropy')}
     model = RF()
     clf = GSCV(model, parameters, verbose=3)
     clf.fit(x_train, y_train)
