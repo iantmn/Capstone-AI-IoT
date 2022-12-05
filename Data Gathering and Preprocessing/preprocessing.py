@@ -54,8 +54,8 @@ def main() -> None:
     # windowing(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-11-24.txt', action_ID='Walking', label='stairs_up',
     #             start_offset=0.5, stop_offset=3, size=1, offset=0.1, epsilon=0.03, do_plot=False)
     pre = Preprocessing('Walking')
-    pre.windowing(r'data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-54-03.txt', label='stairs_down',
-                start_offset=0.5, stop_offset=3, size=40, offset=0.1, epsilon=0.03, do_plot=False, do_scale = True)
+    pre.windowing(r"data-lopen\Data Timo\Accelerometer Data 2022-11-29 11-11-24.txt", label='stairs_up',
+                start_offset=0.5, stop_offset=3, size=40, offset=0.1, epsilon=0.03, do_plot=False, do_scale = False)
 
 
 if __name__ == "__main__":
