@@ -55,7 +55,7 @@ do_randomsearch_svc = False
 do_randomsearch_rf = False
 
 # feature importance
-do_feature_importance = True
+do_feature_importance = False
 
 # ------ Data import ------ #
 # x = []
@@ -102,10 +102,18 @@ df_test = pca.fit_transform(x_test)
 # ------ Training KMeans ------ #
 
 print("Training KMeans...")
+print("Training KMeans...")
+model = KMeans(n_clusters=n_clusters)
+model.fit(x_train)
+label = model.labels_
+# print(label)
+
+pred_y = model.predict(x_test)
+print(f"KMeans accuracy: {accuracy_score(y_test, pred_y)}")
+
 model = KMeans(n_clusters=n_clusters)
 model.fit(df)
 label = model.labels_
-# print(label)
 
 # ------ centroid ------ #
 
