@@ -33,10 +33,10 @@ do_knn = False
 do_svc = False
 
 # random forest
-do_rf = False
+do_rf = True
 plot_rf = False
 plot_rf_tree = False
-
+plot_trees = True
 
 do_dt = False
 do_bagged_class = False
@@ -194,7 +194,7 @@ if do_svc:
 # ------ random forest ------ #
 
 if do_rf:
-    rf = RF(oob_score=True)
+    rf = RF()
     rf.fit(x_train, y_train)
 
     y_pred_train = rf.predict(x_train)
@@ -231,6 +231,33 @@ if do_rf:
         fig = plt.figure(figsize=(15, 10))
         plot_tree(estimator, filled=True, feature_names=x.columns, class_names=le.classes_, impurity=True, rounded=True)
         plt.show()
+
+    if plot_trees:
+        acc = []
+        trees = []
+        for tree in rf.estimators_:
+            test_pred = tree.predict(x_test)
+            accuracy = accuracy_score(y_test, test_pred)
+            acc.append(accuracy)
+
+            for pred in test_pred:
+                for actual in y_test:
+                    if pred == actual:
+                        trees.append(1)
+                    else:
+                        trees.append(0)
+
+                # Create bars
+                y_pos = np.arange(1)
+            for item in trees:
+                if item == 1:
+                    plt.bar(y_pos, item, label='Correct')
+                if item == 0:
+                    plt.bar(y_pos, item, label='Incorrect')
+                # Show graphic
+                plt.show()
+        # acc_y_pw, acc_x_pk, acc_z_pk, acc_y_cn, acc_x_cn, acc_y_pk, acc_z_cn, acc_x_pw, acc_z_pw
+
     
 # ------ decision tree ------ #
 
