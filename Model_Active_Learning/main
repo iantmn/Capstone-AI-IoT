@@ -1,0 +1,10 @@
+from active_learning import Active_learning
+import pandas as pd
+
+def main():
+    labels = set(('a', 'b', 'c'))
+    al = Active_learning(r'features_Walking_scaled.csv', labels)
+    # pd.display(al.datapd)
+
+if __name__ == '__main__':
+    main()
