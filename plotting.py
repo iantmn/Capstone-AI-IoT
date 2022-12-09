@@ -240,67 +240,36 @@ if do_rf:
         plt.show()
 
     if plot_trees:
-        print(np.shape(y_test))
-        print(y_test)
-        class_A_corr = 0
-        class_B_corr = 0
-        class_C_corr = 0
-        class_A_incorr = 0 
-        class_B_incorr = 0
-        class_C_incorr = 0
-        for tree in rf.estimators_:
-            tree.fit(x_train, y_train)
-            test_pred = tree.predict(x_test)
-            print(test_pred)
-            print(y_test)
-            print(len(test_pred))
-            print(len(y_test))
-            for pred in test_pred:
-                for actual in y_test:
-                    if pred == 0 and actual == 0:
-                        class_A_corr += 1
-                    elif pred == 1 and actual == 1:
-                        class_B_corr += 1
-                    elif pred == 2 and actual == 2:
-                        class_C_corr += 1
-                    elif pred == 0 and actual > 0:
-                        class_A_incorr += 1
-                    elif pred == 1 and actual != 1:
-                        class_B_incorr += 1
-                    elif pred == 2 and actual != 2:
-                        class_C_incorr += 1
-            acc_score = accuracy_score(y_test, test_pred)
-            print(acc_score)
+        var_pattern_corr = 'class_corr_{}'
+        var_pattern_incorr = 'class_incorr_{}'
+        start_val = 0
+        corr = []
+        incorr = []
 
-        lst_corr = [class_A_corr, class_B_corr, class_C_corr]
-        print(lst_corr)
-        lst_incorr = [class_A_incorr, class_B_incorr, class_C_incorr]
-        print(lst_incorr)
-        bins = ['Class A', 'Class B', 'Class C']
+        for i in range(0, len(le.classes_)):
+            globals()[var_pattern_corr.format(i)] = start_val
+            globals()[var_pattern_incorr.format(i)] = start_val
+            corr.append(globals()[var_pattern_corr.format(i)])
+            incorr.append(globals()[var_pattern_incorr.format(i)])
+        
+        for tree in rf.estimators_:
+            test_pred = tree.predict(x_test)
+            for i in range(len(y_test)):
+                for x in range(0, len(le.classes_)):
+                    if test_pred[i] == x and y_test[i] == x:
+                        corr[x] += 1
+                    elif test_pred[i] == x and y_test[i] != x:
+                        incorr[x] += 1
+
+        bins = le.classes_
         y_pos = np.arange(len(bins))    
-        plt.bar(y_pos - 0.2, lst_corr, 0.4, label='Correct')
-        plt.bar(y_pos + 0.2, lst_incorr, 0.4, label='Incorrect')
+        plt.bar(y_pos - 0.2, corr, 0.4, label='Correctly labeled')
+        plt.bar(y_pos + 0.2, incorr, 0.4, label='Incorrectly labeled')
         plt.xticks(y_pos, bins)
-        plt.xlabel("Distribution")
-        plt.ylabel("Values")
+        plt.xlabel("Distribution of classification")
+        plt.ylabel("Number of classifications")
         plt.legend()
         plt.show()
-        # X = ['Group A','Group B','Group C']
-        # Ygirls = [class_A_corr, class_B_corr, class_C_corr]
-        # Zboys = [class_A_incorr, class_B_incorr, class_C_incorr]
-        
-        # X_axis = np.arange(len(X))
-        
-        # plt.bar(X_axis, Ygirls, 0.4, label = 'Girls')
-        # plt.bar(X_axis, Zboys, 0.4, label = 'Boys')
-        
-        # plt.xticks(X_axis, X)
-        # plt.xlabel("Groups")
-        # plt.ylabel("Number of Students")
-        # plt.title("Number of Students in each group")
-        # plt.legend()
-        # plt.show()
-
     
 # ------ decision tree ------ #
 
