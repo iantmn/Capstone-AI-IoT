@@ -5,17 +5,18 @@ import numpy as np
 import pandas as pd
 
 # Function to extract how important features are based on the model (standard uses random forest)
-def computeFeatureImportance(df_X: pd.DataFrame, df_Y: pd.DataFrame, n_repeats = 10, model = None, scoring = None) -> pd.DataFrame:
+def computeFeatureImportance(df_X: pd.DataFrame[float], df_Y: pd.DataFrame[float], n_repeats: int = 10, model: object = None, scoring: object = None) -> pd.DataFrame[float, str]:
     """Compute the feature importance of a model.
 
     Args:
         df_X (pd.DataFrame): Dataframe of the features.
         df_Y (pd.DataFrame): Dataframe of the labels.
-        model (_type_, optional): Model to do the test on. Defaults to None.
-        scoring (_type_, optional): How scoring is done. Defaults to None.
+        n_repeats (int, optional): Number of repeats. Defaults to 10.
+        model (object, optional): Model to do the test on. Defaults to None.
+        scoring (object, optional): How scoring is done. Defaults to None.
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: Dataframe of the feature importance. The higher the value, the more important the feature is. First column is the feature importance, second column is the feature name.
     """    
     # standard model is random forest
     if model is None:
@@ -32,7 +33,7 @@ def computeFeatureImportance(df_X: pd.DataFrame, df_Y: pd.DataFrame, n_repeats =
     sorted_ims_idx = np.argsort(feat_ims)[::-1]
     feat_names = feat_names[sorted_ims_idx]
     feat_ims = np.round(feat_ims[sorted_ims_idx], 5)
-    df = pd.DataFrame()
-    df["feature_importance"] = feat_ims
-    df["feature_name"] = feat_names
-    return df
+    df_res = pd.DataFrame()
+    df_res["feature_importance"] = feat_ims
+    df_res["feature_name"] = feat_names
+    return df_res
