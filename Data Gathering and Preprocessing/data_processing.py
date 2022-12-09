@@ -180,6 +180,7 @@ class Preprocessing():
         timestamp_counter = 0
         timestamp_list: list[float] = []
 
+        # check if the file that we want to extract the data from has already been used in this action_ID
         already_processed = False
         try:
             with open('processed_data_files.txt') as f:
@@ -193,6 +194,7 @@ class Preprocessing():
         # This section lets you input y/n if you want to write the features to the file. Prevent adding the same data twice
         done = False
         while not done:
+            # Check if the file was already processed, if it is, ask if the file should be processed again.
             if already_processed:
                 print('The file is already processed at least once.\n')
             write_to_file = input(f"Do you want to save the extracted features '{label}' for '{self.action_ID}'? y/n\n")
@@ -206,6 +208,9 @@ class Preprocessing():
             else:
                 print("Input not valid! Try again")
 
+        # Check if the file that we will write to exist and if it does, if it contains a header already.
+        # Add header if it is not yet in the file.
+        # We also check what the last number is in the file. This is used for the datapoint ID in the write-file
         try:
             with open(self.output_file, 'r') as checkfile:
                 if checkfile.readline().strip() == '':
@@ -217,6 +222,7 @@ class Preprocessing():
         except FileNotFoundError:
             make_header = True
         
+        # If we want to write and there is no header yet, build the header
         if write_to_file == 'y' and make_header:
             with open(self.output_file, 'a') as g:
                 # Build list of possible labels
@@ -235,6 +241,7 @@ class Preprocessing():
                 g.write(specified_header + '\n')
 
         try:
+            # get sampling frequency and the last point
             sampling_frequency, last_point, size = self.get_sampling_frequency(input_file, start_offset, stop_offset, size)
 
             # Variable for the previous window and the current window
