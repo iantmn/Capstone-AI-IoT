@@ -29,19 +29,19 @@ np.random.seed(42)
 n_clusters = 3
 
 # supervised learning
-do_knn = True
-do_svc = True
+do_knn = False
+do_svc = False
 
 # random forest
-do_rf = True
-plot_rf = True
-plot_rf_tree = True
+do_rf = False
+plot_rf = False
+plot_rf_tree = False
 plot_trees = False
 
-do_dt = True
+do_dt = False
 do_bagged_class = False
-do_gd = True
-do_gnb = True
+do_gd = False
+do_gnb = False
 
 # clustering
 do_kmeans_plot = False
