@@ -10,17 +10,42 @@ class Preprocessing():
     def __init__(self, action_ID: str = "") -> None:
         self.action_ID = action_ID
         self.output_file = f'features_{action_ID}.txt'
+
+    def time(self, data: Collection, samples_window: float) -> tuple[float, float, float, float, float]:
+        """Function to extract feature from the time-domain data
+
+        Args:
+            data (Collection): array of multiple sensors. Rows are data, columns are different sensors.
+
+        Returns:
+            tuple[float, float, float, float, float]: tuple of features for this specific windowed sample.
+        """   
+        # Making sure that the data collection is a numpy array     
+        data = np.array(data)
+
+        # List to save the extracted features in. It has as much items (lists) as sensors present
+        features: list[list[float]] = [[] for i in range(data.shape[1])]
+        for i in range(data.shape[1]):
+            # Extract the features: minimum, maximum, average, standard deviation and area under the curve
+            features[i].append(min(data[:, i]))
+            features[i].append(max(data[:, i]))
+            features[i].append(np.mean(data[:, i]))
+            features[i].append(np.std(data[:, i]))
+            features[i].append(sum(data[:, i]) / samples_window)
+
+        return features
+
         
     def fourier(self, data: Collection, sampling_frequency: float, epsilon: float = 0.1, zero_padding: int = 0) -> tuple[np.ndarray[float], list[float]]:
         """In the function: zeropadding, fft time data columns, spectral analysis
 
         Args:
-            data (Collection): numpy array of multiple sensors. Rows are data, columns are different sensors
-            sampling_frequency (float): floating point number with the sample frequency used to measure the data
+            data (Collection): array of multiple sensors. Rows are data, columns are different sensors.
+            sampling_frequency (float): floating point number with the sample frequency used to measure the data.
             epsilon (float): relative boundary for what values that are higher than the epsilon * maximum value is used
-            to add to the total power
+            to add to the total power.
             zero_padding: total amount of zero's are added to the data collection. This will increase the amount of
-            frequencies in the fourier transform 
+            frequencies in the fourier transform .
 
         Returns:
             tuple[np.array[float]]: tuple of features for this specific windowed sample.
@@ -226,13 +251,23 @@ class Preprocessing():
         if write_to_file == 'y' and make_header:
             with open(self.output_file, 'a') as g:
                 # Build list of possible labels
-                full_header_features = [',acc_x_pk,acc_x_cn,acc_x_pw',
-                                        ',acc_y_pk,acc_y_cn,acc_y_pw',
-                                        ',acc_z_pk,acc_z_cn,acc_z_pw',
-                                        ',gyr_x_pk,gyr_x_cn,gyr_x_pw',
-                                        ',gyr_y_pk,gyr_y_cn,gyr_y_pw',
-                                        ',gyr_z_pk,gyr_z_cn,gyr_z_pw']
+                sensor_names = ['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z']
+                feature_names = ['min', 'max', 'avg', 'std', 'AUC', 'pk', 'cn', 'pw']
+
+                full_header_features = []
+                for i in range(len(sensor_names)):
+                    full_header_features.append('')
+                    for j in feature_names:
+                        full_header_features[i] += f',{sensor_names[i]}_{j}'
+                # full_header_features = [',acc_x_pk,acc_x_cn,acc_x_pw',
+                #                         ',acc_y_pk,acc_y_cn,acc_y_pw',
+                #                         ',acc_z_pk,acc_z_cn,acc_z_pw',
+                #                         ',gyr_x_pk,gyr_x_cn,gyr_x_pw',
+                #                         ',gyr_y_pk,gyr_y_cn,gyr_y_pw',
+                #                         ',gyr_z_pk,gyr_z_cn,gyr_z_pw']
+
                 # Build the header
+                # print(full_header_features)
                 specified_header = 'ID,label,time'
                 for i in range(stop):
                     specified_header += full_header_features[i]
@@ -262,7 +297,7 @@ class Preprocessing():
             # Opening the data file again and skipping the header lines.
             k = 0
             with open(input_file) as f:
-                print(start_offset, stop_offset, size)
+                # print(start_offset, stop_offset, size)
                 for _ in range(4 + int(start_offset * sampling_frequency)): f.readline()
                 # Opening the output file; the extracted features will be put in the file
                 with open(self.output_file, 'a') as g:
@@ -332,17 +367,19 @@ class Preprocessing():
                             # choose the length of the zero padding of the window. Increased definition
                             padding = int(len(current_window) * 6 / 5)
                             # get the features from the window and the fourier signal for plotting
-                            ffts, features = self.fourier(current_window, sampling_frequency, zero_padding=padding-len(current_window), epsilon=epsilon)
+                            features_time = self.time(current_window, samples_window)
+                            ffts, features_fourier = self.fourier(current_window, sampling_frequency, zero_padding=padding-len(current_window), epsilon=epsilon)
                             
-                            # print(features)
+                            # Make a list with all the features in the right order per sensor. Right order is first time features and then frequency
+                            features: list[list[float]] = []
+                            for i in range(len(features_time)):
+                                features.append(features_time[i] + list(features_fourier[i])[1:])
                                 
                             # build a string of the feature data. The first element of the string is the timestamp, pop this timestamp
                             features_list = [timestamp_list.pop(0)]
                             for tup in features:
                                 for i, data in enumerate(tup):
-                                    # We don't take the first value since it is an index representation 
-                                    if i > 0:
-                                        features_list.append(str(data))
+                                    features_list.append(str(data))
                             # print(features_list)
                             # Add the features to the file if write_to_file is 'y'
                             if write_to_file == 'y':
