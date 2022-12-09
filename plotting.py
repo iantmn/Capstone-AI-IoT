@@ -245,6 +245,8 @@ if do_rf:
         start_val = 0
         corr = []
         incorr = []
+        var_pattern_acc = 'acc_class_{}'
+        acc = []
 
         for i in range(0, len(le.classes_)):
             globals()[var_pattern_corr.format(i)] = start_val
@@ -252,6 +254,7 @@ if do_rf:
             corr.append(globals()[var_pattern_corr.format(i)])
             incorr.append(globals()[var_pattern_incorr.format(i)])
         
+        # Check accuracy per class
         for tree in rf.estimators_:
             test_pred = tree.predict(x_test)
             for i in range(len(y_test)):
@@ -270,6 +273,18 @@ if do_rf:
         plt.ylabel("Number of classifications")
         plt.legend()
         plt.show()
+        for x in range(0, len(corr)):
+            if corr[x] != 0 and incorr[x] != 0:
+                globals()[var_pattern_acc.format(x)] = corr[x] / (corr[x] + incorr[x])
+            else:
+                globals()[var_pattern_acc.format(x)] = 0
+            acc.append(globals()[var_pattern_acc.format(x)])
+        print(corr)    
+        print(incorr)
+        count = 0
+        for item in acc:
+            print("The accuracy for class named {} is: ".format(le.classes_[count]) + str(item))
+            count += 1
     
 # ------ decision tree ------ #
 
