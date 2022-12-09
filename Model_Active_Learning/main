@@ -2,7 +2,7 @@ from active_learning import Active_learning
 import pandas as pd
 
 def main():
-    labels = set(('a', 'b', 'c'))
+    labels = set(('stairs_up', 'stairs_down', 'walking'))
     al = Active_learning(r'features_Walking_scaled.csv', labels)
     # pd.display(al.datapd)
 
