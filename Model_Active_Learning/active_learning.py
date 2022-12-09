@@ -60,7 +60,7 @@ class Active_learning():
         self.set_starting_points()
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
-        self.iterate(200)
+        self.iterate(1900)
 
     def set_starting_points(self):
         """Generates training set by selecting random starting points, labeling them, and checking if there's an instance of every activity"""
@@ -149,9 +149,9 @@ class Active_learning():
         """This function will call the the identification system from Gijs en Timo"""
         # time.sleep(1)
         # print(id)
-        if id < 91:
+        if id < 361:
             return 'stairs_up'
-        elif id < 182:
+        elif id < 722:
             return 'stairs_down'
         else:
             return 'walking' 
