@@ -1,10 +1,16 @@
-$ npm i gpmf-extract
-
-
 
 const gpmfExtract = require('gpmf-extract');
-gpmfExtract(file).then(res => {
-  console.log('Length of data received:', res.rawData.length);
-  console.log('Framerate of data received:', 1 / res.timing.frameDuration);
-  // Do what you want with the data
-});
+const goproTelemetry = require(`gopro-telemetry`);
+const fs = require('fs');
+
+const file = fs.readFileSync('D:/DCIM/100GOPRO/GH010011.mp4');
+
+
+gpmfExtract(file)
+  .then(extracted => {
+    goproTelemetry(extracted, {}, telemetry => {
+      fs.writeFileSync('output_path.json', JSON.stringify(telemetry));
+      console.log('Telemetry saved as JSON');
+    });
+  })
+  .catch(error => console.error(error));
