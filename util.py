@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 # Function to extract how important features are based on the model (standard uses random forest)
-def computeFeatureImportance(df_X: pd.DataFrame[float], df_Y: pd.DataFrame[float], n_repeats: int = 10, model: object = None, scoring: object = None) -> pd.DataFrame[float, str]:
+def computeFeatureImportance(df_X: pd.DataFrame, df_Y: pd.DataFrame, n_repeats: int = 10, model: object = None, scoring: object = None) -> pd.DataFrame:
     """Compute the feature importance of a model.
 
     Args:

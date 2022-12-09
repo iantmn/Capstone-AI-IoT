@@ -27,6 +27,7 @@ np.random.seed(42)
 # ------ Settings ------ #
 
 n_clusters = 3
+train_size = 0.8
 
 # supervised learning
 do_knn = False
@@ -36,15 +37,16 @@ do_svc = False
 do_rf = False
 plot_rf = False
 plot_rf_tree = False
-plot_trees = False
 
+# other models
 do_dt = False
 do_bagged_class = False
 do_gd = False
 do_gnb = False
 
 # clustering
-do_kmeans_plot = False
+do_kmeans = False
+do_kmeans_plot = True
 
 # gridsearch
 do_gridsearch_svc = False
@@ -68,11 +70,12 @@ do_feature_importance = True
 print("Importing data...")
 x = pd.read_csv(r'Data Gathering and Preprocessing/features_Walking_scaled.csv')
 print("Data imported")
+print(f"Shape of data: {x.shape}")
 
 # ------ train, test split ------ #
 
 print("Splitting data into train and test...")
-train, test = train_test_split(x, train_size=0.8)
+train, test = train_test_split(x, train_size=train_size)
 
 # ------ x, y split ------ #
 
@@ -89,86 +92,88 @@ y_test = le.transform(test["label"])
 x_test = test.copy()
 x_test = x_test.drop(["label", "time", "ID"], axis=1)
 
-# ------ PCA ------ #
+if do_kmeans:
+    print("starting kmeans...")
+    # ------ PCA ------ #
 
-print("Using PCA...")
-pca = PCA(2)
-df = pca.fit_transform(x_train)
-df_test = pca.fit_transform(x_test)
-# df = pd.DataFrame(df)
-# df_test = pd.DataFrame(df_test)
-# print(df)
+    print("Using PCA...")
+    pca = PCA(2)
+    df = pca.fit_transform(x_train)
+    df_test = pca.fit_transform(x_test)
+    # df = pd.DataFrame(df)
+    # df_test = pd.DataFrame(df_test)
+    # print(df)
 
-# ------ Training KMeans ------ #
+    # ------ Training KMeans ------ #
 
-print("Training KMeans...")
-model = KMeans(n_clusters=n_clusters)
-model.fit(x_train)
-label = model.labels_
-# print(label)
+    print("Training KMeans...")
+    model = KMeans(n_clusters=n_clusters)
+    model.fit(x_train)
+    label = model.labels_
+    # print(label)
 
-pred_y = model.predict(x_test)
-print(f"KMeans accuracy: {accuracy_score(y_test, pred_y)}")
+    pred_y = model.predict(x_test)
+    print(f"KMeans accuracy: {accuracy_score(y_test, pred_y)}")
 
-model = KMeans(n_clusters=n_clusters)
-model.fit(df)
-label = model.labels_
+    model = KMeans(n_clusters=n_clusters)
+    model.fit(df)
+    label = model.labels_
 
-# ------ centroid ------ #
+    # ------ centroid ------ #
 
-print("Calculating centroids...")
-centroids = model.cluster_centers_
-u_labels = np.unique(label)
+    print("Calculating centroids...")
+    centroids = model.cluster_centers_
+    u_labels = np.unique(label)
 
-pred = model.predict(df_test)
+    pred = model.predict(df_test)
 
-if do_kmeans_plot:
-    # ------ plot ------ #
-    # for i, data in enumerate(x):
-    #     print(f"{data[0]=}, {data[1]=}, {label[i]=}")
-    #     plt.scatter(data[0], data[1], label=label[i])
+    if do_kmeans_plot:
+        # ------ plot ------ #
+        # for i, data in enumerate(x):
+        #     print(f"{data[0]=}, {data[1]=}, {label[i]=}")
+        #     plt.scatter(data[0], data[1], label=label[i])
 
-    print("Plotting model and test data...")
-    
-    fig, axs = plt.subplots(2, 2)
-
-    axs[0, 0].title.set_text('Model')
-    axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
-    axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        print("Plotting model and test data...")
         
-    # ------ prediction test data ------ #
+        fig, axs = plt.subplots(2, 2)
 
-    # Make predictions on the test data
+        axs[0, 0].title.set_text('Model')
+        axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
+        axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+            
+        # ------ prediction test data ------ #
 
-    axs[0, 1].title.set_text('new data points')
-    axs[0, 1].scatter(df_test[:, :1], df_test[:, 1:], c='red')
-    axs[0, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        # Make predictions on the test data
 
-    # create second plot which show new points whichout prediction
-    axs[1, 0].title.set_text('New data on model')
-    axs[1, 0].scatter(df[:, :1], df[:, 1:], c=label)
-    axs[1, 0].scatter(df_test[:, :1], df_test[:, 1:], c='red')
-    axs[1, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        axs[0, 1].title.set_text('new data points')
+        axs[0, 1].scatter(df_test[:, :1], df_test[:, 1:], c='red')
+        axs[0, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
 
-    # create third plot which show the predictions of the new points
-    axs[1, 1].title.set_text('result')
-    axs[1, 1].scatter(df[:, :1], df[:, 1:], c=label)
-    axs[1, 1].scatter(df_test[:, :1], df_test[:, 1:], c=pred)
-    axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-    plt.legend()
-    plt.show()
+        # create second plot which show new points whichout prediction
+        axs[1, 0].title.set_text('New data on model')
+        axs[1, 0].scatter(df[:, :1], df[:, 1:], c=label)
+        axs[1, 0].scatter(df_test[:, :1], df_test[:, 1:], c='red')
+        axs[1, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
 
-    print("plotting model vs actual...")
-    fig, axs = plt.subplots(2)
-    axs[0].title.set_text('model result')
-    axs[0].scatter(df[:, :1], df[:, 1:], c=label)
-    axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-    
-    axs[1].title.set_text('Actual result')
-    axs[1].scatter(df[:, :1], df[:, 1:], c=y_train)
-    axs[1].legend()
-    axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-    plt.show()
+        # create third plot which show the predictions of the new points
+        axs[1, 1].title.set_text('result')
+        axs[1, 1].scatter(df[:, :1], df[:, 1:], c=label)
+        axs[1, 1].scatter(df_test[:, :1], df_test[:, 1:], c=pred)
+        axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        plt.legend()
+        plt.show()
+
+        print("plotting model vs actual...")
+        fig, axs = plt.subplots(2)
+        axs[0].title.set_text('model result')
+        axs[0].scatter(df[:, :1], df[:, 1:], c=label)
+        axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        
+        axs[1].title.set_text('Actual result')
+        axs[1].scatter(df[:, :1], df[:, 1:], c=y_train)
+        axs[1].legend()
+        axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        plt.show()
 
 # ------ knn ------ #
 
@@ -243,68 +248,6 @@ if do_rf:
         fig = plt.figure(figsize=(15, 10))
         plot_tree(estimator, filled=True, feature_names=x.columns, class_names=le.classes_, impurity=True, rounded=True)
         plt.show()
-
-    if plot_trees:
-        print(np.shape(y_test))
-        print(y_test)
-        corr = 5
-        incorr = 100 - corr
-        class_A_corr = 0
-        class_B_corr = 0
-        class_C_corr = 0
-        class_A_incorr = 0 
-        class_B_incorr = 0
-        class_C_incorr = 0
-        for tree in rf.estimators_:
-            tree.fit(x_train, y_train)
-            test_pred = tree.predict(x_test)
-            print(test_pred)
-            print(y_test)
-            for pred in test_pred:
-                for actual in y_test:
-                    if pred == 0 and actual == 0:
-                        class_A_corr += 1
-                    elif pred == 1 and actual == 1:
-                        class_B_corr += 1
-                    elif pred == 2 and actual == 2:
-                        class_C_corr += 1
-                    elif pred == 0 and actual > 0:
-                        class_A_incorr += 1
-                    elif pred == 1 and actual != 1:
-                        class_B_incorr += 1
-                    elif pred == 2 and actual != 2:
-                        class_C_incorr += 1
-            acc_score = accuracy_score(y_test, test_pred)
-            print(acc_score)
-
-        lst_corr = [class_A_corr, class_B_corr, class_C_corr]
-        print(lst_corr)
-        lst_incorr = [class_A_incorr, class_B_incorr, class_C_incorr]
-        print(lst_incorr)
-        bins = ['Class A', 'Class B', 'Class C']
-        y_pos = np.arange(len(bins))    
-        plt.bar(y_pos - 0.2, lst_corr, 0.4, label='Correct')
-        plt.bar(y_pos + 0.2, lst_incorr, 0.4, label='Incorrect')
-        plt.xticks(y_pos, bins)
-        plt.xlabel("Distribution")
-        plt.ylabel("Values")
-        plt.legend()
-        plt.show()
-        # X = ['Group A','Group B','Group C']
-        # Ygirls = [class_A_corr, class_B_corr, class_C_corr]
-        # Zboys = [class_A_incorr, class_B_incorr, class_C_incorr]
-        
-        # X_axis = np.arange(len(X))
-        
-        # plt.bar(X_axis, Ygirls, 0.4, label = 'Girls')
-        # plt.bar(X_axis, Zboys, 0.4, label = 'Boys')
-        
-        # plt.xticks(X_axis, X)
-        # plt.xlabel("Groups")
-        # plt.ylabel("Number of Students")
-        # plt.title("Number of Students in each group")
-        # plt.legend()
-        # plt.show()
 
     
 # ------ decision tree ------ #
@@ -432,7 +375,7 @@ if do_randomsearch_rf:
     
 if do_feature_importance:
     print("calculating feature importance...")
-    imp = computeFeatureImportance(x_train, y_train)
+    imp = computeFeatureImportance(x_train, y_train, n_repeats=50)
     total = imp["feature_importance"].sum()
     imp["feature_importance"] = imp["feature_importance"] / total
     print(imp)
