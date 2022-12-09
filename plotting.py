@@ -263,6 +263,7 @@ if do_rf:
                         corr[x] += 1
                     elif test_pred[i] == x and y_test[i] != x:
                         incorr[x] += 1
+            print(test_pred)
 
         bins = le.classes_
         y_pos = np.arange(len(bins))    
@@ -273,6 +274,7 @@ if do_rf:
         plt.ylabel("Number of classifications")
         plt.legend()
         plt.show()
+        
         for x in range(0, len(corr)):
             if corr[x] != 0 and incorr[x] != 0:
                 globals()[var_pattern_acc.format(x)] = corr[x] / (corr[x] + incorr[x])
