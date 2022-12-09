@@ -55,7 +55,7 @@ do_randomsearch_svc = False
 do_randomsearch_rf = False
 
 # feature importance
-do_feature_importance = False
+do_feature_importance = True
 
 # ------ Data import ------ #
 # x = []
@@ -101,7 +101,6 @@ df_test = pca.fit_transform(x_test)
 
 # ------ Training KMeans ------ #
 
-print("Training KMeans...")
 print("Training KMeans...")
 model = KMeans(n_clusters=n_clusters)
 model.fit(x_train)
@@ -241,30 +240,66 @@ if do_rf:
         plt.show()
 
     if plot_trees:
-        acc = []
-        trees = []
+        print(np.shape(y_test))
+        print(y_test)
+        corr = 5
+        incorr = 100 - corr
+        class_A_corr = 0
+        class_B_corr = 0
+        class_C_corr = 0
+        class_A_incorr = 0 
+        class_B_incorr = 0
+        class_C_incorr = 0
         for tree in rf.estimators_:
+            tree.fit(x_train, y_train)
             test_pred = tree.predict(x_test)
-            accuracy = accuracy_score(y_test, test_pred)
-            acc.append(accuracy)
-
+            print(test_pred)
+            print(y_test)
             for pred in test_pred:
                 for actual in y_test:
-                    if pred == actual:
-                        trees.append(1)
-                    else:
-                        trees.append(0)
+                    if pred == 0 and actual == 0:
+                        class_A_corr += 1
+                    elif pred == 1 and actual == 1:
+                        class_B_corr += 1
+                    elif pred == 2 and actual == 2:
+                        class_C_corr += 1
+                    elif pred == 0 and actual > 0:
+                        class_A_incorr += 1
+                    elif pred == 1 and actual != 1:
+                        class_B_incorr += 1
+                    elif pred == 2 and actual != 2:
+                        class_C_incorr += 1
+            acc_score = accuracy_score(y_test, test_pred)
+            print(acc_score)
 
-                # Create bars
-                y_pos = np.arange(1)
-            for item in trees:
-                if item == 1:
-                    plt.bar(y_pos, item, label='Correct')
-                if item == 0:
-                    plt.bar(y_pos, item, label='Incorrect')
-                # Show graphic
-                plt.show()
-        # acc_y_pw, acc_x_pk, acc_z_pk, acc_y_cn, acc_x_cn, acc_y_pk, acc_z_cn, acc_x_pw, acc_z_pw
+        lst_corr = [class_A_corr, class_B_corr, class_C_corr]
+        print(lst_corr)
+        lst_incorr = [class_A_incorr, class_B_incorr, class_C_incorr]
+        print(lst_incorr)
+        bins = ['Class A', 'Class B', 'Class C']
+        y_pos = np.arange(len(bins))    
+        plt.bar(y_pos - 0.2, lst_corr, 0.4, label='Correct')
+        plt.bar(y_pos + 0.2, lst_incorr, 0.4, label='Incorrect')
+        plt.xticks(y_pos, bins)
+        plt.xlabel("Distribution")
+        plt.ylabel("Values")
+        plt.legend()
+        plt.show()
+        # X = ['Group A','Group B','Group C']
+        # Ygirls = [class_A_corr, class_B_corr, class_C_corr]
+        # Zboys = [class_A_incorr, class_B_incorr, class_C_incorr]
+        
+        # X_axis = np.arange(len(X))
+        
+        # plt.bar(X_axis, Ygirls, 0.4, label = 'Girls')
+        # plt.bar(X_axis, Zboys, 0.4, label = 'Boys')
+        
+        # plt.xticks(X_axis, X)
+        # plt.xlabel("Groups")
+        # plt.ylabel("Number of Students")
+        # plt.title("Number of Students in each group")
+        # plt.legend()
+        # plt.show()
 
     
 # ------ decision tree ------ #
