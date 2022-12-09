@@ -25,10 +25,13 @@ class Active_learning():
 
         self.training()
 
-        plt.plot(self.gini_margin_acc)
+        # self.unpreds.to_csv('unpreds testing')
+
+        plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
         plt.xlabel('Iterations [n]')
-        plt.ylabel('Gini impurity')
-        plt.title('Active learning gini degradation.')
+        plt.ylabel('Magnitude')
+        plt.title('Active learning')
+        plt.legend()
         plt.show()
         
     @property
@@ -55,6 +58,8 @@ class Active_learning():
     def training(self):
         """the process of training the datapoints, first set starting points, then iterate untill you have a certainty"""        
         self.set_starting_points()
+        self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
+        self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
         self.iterate(200)
 
     def set_starting_points(self):
@@ -119,12 +124,25 @@ class Active_learning():
 
         Returns:
             int: ID that has been labeled
-        """                
+        """          
+        # Determine the ID of the most ambiguous datapoint      
         get_id_to_label, margin = self.find_most_ambiguous_id()
-        # print(f'id_to_label: {get_id_to_label}, margin: {margin}, gini_index: {self.gini_margin_acc[-1]}')
+        # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
-        # self.datapd.at[get_id_to_label, 'label'] = self.identify(self.datapd.at[get_id_to_label, 'time'])
-        self.X_pool.at[get_id_to_label, 'label'] = self.identify(get_id_to_label)  # just for testing
+        # Get what label this ID is supposed to get
+        new_label = self.identify(get_id_to_label)  # just for testing
+
+        # Extract the row from the unpredicted array
+        t = self.unpreds[self.unpreds[:, 0] == get_id_to_label, :]
+        # Label the row
+        t[0, 1] = new_label
+        # Stack it onto the predicted array
+        self.preds = np.vstack((self.preds, t))
+        # Delete it from the unpredicted array
+        self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == get_id_to_label)[0][0], 0)
+        if get_id_to_label in self.unpreds[:, 1]:
+            raise ValueError('you did an oopsie')
+        # Return the label and the margin
         return get_id_to_label, margin
 
     def identify(self, id):
@@ -143,14 +161,11 @@ class Active_learning():
         '''Finds the most ambiguous sample. The unlabeled sample with the greatest
             difference between most and second most probably classes is the most ambiguous.
             Returns only the id of this sample'''
-        try:
-            
-            preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
-            unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
+        try:            
             # print(self.datapd.shape, preds.shape)
-            self.model.fit(preds[:, 3:], preds[:, 1])
-            sorted_preds = np.sort(self.model.predict_proba(unpreds[:, 3:]), axis=1)
-            # print(unpreds.shape)
+            self.model.fit(self.preds[:, 3:], self.preds[:, 1])
+            sorted_preds = np.sort(self.model.predict_proba(self.unpreds[:, 3:]), axis=1)
+            # print(self.preds.shape, self.unpreds.shape)
             # print(sorted_preds[:5, :])
             lowest_margin = 2
             lowest_margin_sample_id: int = 0
@@ -163,19 +178,18 @@ class Active_learning():
                 margin = sorted_preds[i, -1] - sorted_preds[i, -2]
                 if margin < lowest_margin:
                     # print(i, sorted_preds[i, :], list(unlbld)[i])
-                    lowest_margin_sample_id = unpreds[i, 0]
+                    lowest_margin_sample_id = self.unpreds[i, 0]
                     lowest_margin = margin
                 self.gini_margin_acc[-1][0] += self.gini_impurity_index(list(sorted_preds[i, :]))
             self.gini_margin_acc[-1][0] /= len(unlbld)
             self.gini_margin_acc[-1][1] = lowest_margin
-            acc = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
-            self.gini_margin_acc[-1][2] = acc
+            self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
             print(self.gini_margin_acc[-1])
             
             # most_ambiguous = X_pool.iloc[lowest_margin_sample_id]
             return lowest_margin_sample_id, lowest_margin
         except ValueError:
-            self.X_pool.to_csv('xpool doet raar.csv')
+            # self.X_pool.to_csv('xpool doet raar.csv')
             # print(preds)
             raise ValueError(preds)
 
