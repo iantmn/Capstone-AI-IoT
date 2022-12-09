@@ -29,19 +29,19 @@ np.random.seed(42)
 n_clusters = 3
 
 # supervised learning
-do_knn = False
-do_svc = False
+do_knn = True
+do_svc = True
 
 # random forest
 do_rf = True
-plot_rf = False
-plot_rf_tree = False
-plot_trees = True
+plot_rf = True
+plot_rf_tree = True
+plot_trees = False
 
-do_dt = False
+do_dt = True
 do_bagged_class = False
-do_gd = False
-do_gnb = False
+do_gd = True
+do_gnb = True
 
 # clustering
 do_kmeans_plot = False
@@ -173,6 +173,7 @@ if do_kmeans_plot:
 # ------ knn ------ #
 
 if do_knn:
+    print("Training KNN model...")
     knn = KNN(n_neighbors=3)
     knn.fit(x_train, y_train)
 
@@ -187,6 +188,7 @@ if do_knn:
 # ------ svc ------ #
 
 if do_svc:
+    print("Training SVC model...")
     svc = SVC()
     svc.fit(x_train, y_train)
 
@@ -201,6 +203,7 @@ if do_svc:
 # ------ random forest ------ #
 
 if do_rf:
+    print("Training Random Forest model...")
     rf = RF()
     rf.fit(x_train, y_train)
 
@@ -212,6 +215,7 @@ if do_rf:
 
     print(f"rf: {accuracy_train=}, {accuracy_test=}")
     if plot_rf:
+        print("Plotting RF model vs actual...")
         fig, axs = plt.subplots(2, 2)
         axs[0, 0].title.set_text('kmeans model result')
         axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
@@ -233,6 +237,7 @@ if do_rf:
         plt.show()
 
     if plot_rf_tree:
+        print("Plotting individual RF tree...")
         estimator = rf.estimators_[5]
         
         fig = plt.figure(figsize=(15, 10))
@@ -305,6 +310,7 @@ if do_rf:
 # ------ decision tree ------ #
 
 if do_dt:
+    print("training decision tree...")
     dt = DecisionTreeClassifier()
     dt.fit(x_train, y_train)
 
@@ -323,6 +329,7 @@ if do_dt:
 # ------ bagged classifier ------ #
 
 if do_bagged_class:
+    print("training bagged classifier...")
     chosen = SVC()
     num_models = 100
     model = BaggingClassifier(base_estimator=chosen, n_estimators=num_models, random_state=42)
@@ -340,6 +347,7 @@ if do_bagged_class:
 # ------ gradient descent ------ #
 
 if do_gd:
+    print("training SGD classifier...")
     gd = SGDClassifier()
     gd.fit(x_train, y_train)
 
@@ -354,6 +362,7 @@ if do_gd:
 # ------ guassian naive Bayes ------ #
 
 if do_gnb:
+    print("training gaussian naive bayes...")
     nb = GaussianNB()
     nb.fit(x_train, y_train)
 
@@ -369,6 +378,7 @@ if do_gnb:
 # ------ gridsearch svc ------ #
     
 if do_gridsearch_svc:
+    print("training gridsearch svc...")
     parameters = {'kernel':('linear', 'rbf'), 'C':[0.001, 0.01, 0.1, 1, 10, 100]}
     model = SVC()
     clf = GSCV(model, parameters, verbose=3)
@@ -382,6 +392,7 @@ if do_gridsearch_svc:
 # ------ gridsearch rf ------ #
 
 if do_gridsearch_rf:
+    print("training gridsearch rf...")
     parameters = {'n_estimators':[1, 10, 100, 1000], 'max_depth':[None], 'min_samples_split':[2, 4, 8]}
     model = RF()
     clf = GSCV(model, parameters, verbose=3)
@@ -394,6 +405,7 @@ if do_gridsearch_rf:
 # ------ randomsearch svc ------ #
 
 if do_randomsearch_svc:
+    print("training randomsearch svc...")
     parameters = {'kernel':('linear', 'rbf'), 'C':[0.001, 0.01, 0.1, 1, 10, 100]}
     model = SVC()
     clf = RSCV(model, parameters, verbose=3)
@@ -406,6 +418,7 @@ if do_randomsearch_svc:
 # ------ randomsearch rf ------ #    
 
 if do_randomsearch_rf:
+    print("training randomsearch rf...")
     parameters = {'n_estimators':[1, 10, 100, 1000], 'max_depth':[None], 'min_samples_split':[2, 4, 8]}
     model = RF()
     clf = RSCV(model, parameters, verbose=3)

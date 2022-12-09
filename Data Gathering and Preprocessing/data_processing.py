@@ -11,7 +11,7 @@ class Preprocessing():
         self.action_ID = action_ID
         self.output_file = f'features_{action_ID}.txt'
         
-    def fourier(self, data: Collection, sampling_frequency: float, epsilon: float = 0.1, zero_padding: int = 0) -> tuple[np.ndarray[float], list[float]]:
+    def fourier(self, data: Collection, sampling_frequency: float, epsilon: float = 0.1, zero_padding: int = 0):
         """In the function: zeropadding, fft time data columns, spectral analysis
 
         Args:
