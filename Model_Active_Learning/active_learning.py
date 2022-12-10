@@ -72,7 +72,7 @@ class Active_learning():
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
         # Set the most ambiguous points iteratively
-        self.iterate(40)
+        self.iterate(190)
 
     def set_starting_points(self):
         """Generates training set by selecting random starting points, labeling them, and checking if there's an instance of every activity"""
@@ -167,7 +167,7 @@ class Active_learning():
         """This function will call the the identification system from Gijs en Timo, for now it has been automated"""
         # time.sleep(0.2)
         # print(id)
-        if 'old' in self.data_file:
+        if 'old' in self.data_file or 'time_features' in self.data_file:
             if id < 91:
                 return 'stairs_up'
             elif id < 182:
