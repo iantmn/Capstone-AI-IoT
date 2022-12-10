@@ -72,7 +72,7 @@ class Active_learning():
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
         # Set the most ambiguous points iteratively
-        self.iterate(190)
+        self.iterate(1900)
 
     def set_starting_points(self):
         """Generates training set by selecting random starting points, labeling them, and checking if there's an instance of every activity"""
