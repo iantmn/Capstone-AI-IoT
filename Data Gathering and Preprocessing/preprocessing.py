@@ -16,7 +16,7 @@ def main() -> None:
 
     #         data_array = np.array(data)
 
-    #         # TODO making the windows and make the ffts
+    #         # TODO making thes windows and make the ffts
 
     #         # Not necessary anymore?
     #         time = np.arange(0, len(data) / sample_frequency, 1 / sample_frequency)
