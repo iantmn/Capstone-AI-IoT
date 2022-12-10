@@ -60,7 +60,7 @@ def main() -> None:
     pre.windowing(r"data-lopen/Data Timo/Accelerometer Data 2022-11-29 11-38-43.txt", label='stairs_down',
                 start_offset=0.5, stop_offset=3, size=2, offset=0.2, epsilon=0.03, do_plot=False, do_scale = False)
     pre.windowing(r"data-lopen/Alan data/Walking-20221201T092023Z-001/Walking/Accelerometer_Data_walking_29-11[1].txt", label='walking',
-                start_offset=0.5, stop_offset=3, size=2, offset=0.2, epsilon=0.03, do_plot=False, do_scale = False)
+                start_offset=0.5, stop_offset=3, size=2, offset=0.2, epsilon=0.03, do_plot=False, do_scale = True)
 
     # pre.SuperStandardScaler()
 

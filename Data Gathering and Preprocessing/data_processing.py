@@ -521,52 +521,59 @@ class Preprocessing():
         data_array = data_array[1:]
         columns = columns[1:]
 
+        fa = 0
+        if 'acc_x_min' in header:
+            fa += 5
+        if 'acc_x_pk' in header:
+            fa += 3
+
         # Get amount of features and datapoints
-        features_amount = (data_array.shape[1])//3
+        sensors_amount = (data_array.shape[1])//fa
         datapoints_amount = data_array.shape[0] - 1
 
-        if features_amount > 6:
-            raise ValueError('You have used more than 6 sensors, we have not yet implemented ')
+        print(f'fa: {fa}, sensors_amount: {sensors_amount}')
 
+        if sensors_amount > 6:
+            raise ValueError('You have used more than 6 sensors, we have not yet implemented ')
         # If there are more then 3 sensors used, use two different sets.
         # Case < 4 sensors used, max 9 features. Sum 
-        for i in range(min(3, features_amount)):
+        for i in range(fa):
             sum_feature = 0
             # Go trough every column with the same feature of different sensors and add them
-            for j in range(0, features_amount*3, 3):
+            for j in range(0, min(3, sensors_amount)*fa, fa):
                 sum_feature += sum(data_array[:, i+j])
             # Devide to get the mean
-            sum_feature = sum_feature / (3*datapoints_amount)
+            sum_feature = sum_feature / (min(3, sensors_amount)*datapoints_amount)
 
             # Determine standard deviation of the feature
             std_feature = 0
-            for j in range(0, features_amount*3, 3):
+            for j in range(0, min(3, sensors_amount)*fa, fa):
                 for k in range(0, datapoints_amount):
                     std_feature += (data_array[k, i+j] - sum_feature)**2
             # Devide by n-1 and take root
-            std_feature = (std_feature/(3*datapoints_amount-1))**0.5
+            std_feature = (std_feature/(min(3, sensors_amount)*datapoints_amount-1))**0.5
             # Rescale the columns with their respective feature mean and std
-            for j in range(0, features_amount*3, 3):
+            for j in range(0, min(3, sensors_amount)*fa, fa):
                 data_array[:, i+j] = (data_array[:, i+j] - sum_feature)/std_feature
         # if there are more then 3 sensors used, we have gyroscope sensors as well.
-        if features_amount > 3:
-            for i in range(0, min(3, features_amount-3)):
+        if sensors_amount > 3:
+            for i in range(0, fa-3):
                 sum_feature = 0
                 # Go trough every column with the same feature of different sensors and add them
-                for j in range(9, (features_amount-3)*3+9, 3):
+                for j in range(3*fa, sensors_amount*fa, fa):
                     sum_feature += sum(data_array[:, i+j])
                 # Devide to get the mean
-                sum_feature = sum_feature / (3*datapoints_amount)
+                sum_feature = sum_feature / ((sensors_amount-3)*datapoints_amount)
 
                 # Determine standard deviation of the feature
                 std_feature = 0
-                for j in range(9, (features_amount-3)*3+9, 3):
-                    for k in range(0, datapoints_amount-3):
+                for j in range(3*fa, sensors_amount*fa, fa):
+                    for k in range(0, datapoints_amount):
                         std_feature += (data_array[k, i+j] - sum_feature)**2
                 # Devide by n-1 and take root
-                std_feature = (std_feature/(3*datapoints_amount-1))**0.5
+                std_feature = (std_feature/((sensors_amount-3)*datapoints_amount-1))**0.5
                 # Rescale the columns with their respective feature mean and std
-                for j in range(9, (features_amount-3)*3+9, 3):
+                for j in range(3*fa, sensors_amount*fa, fa):
                     data_array[:, i+j] = (data_array[:, i+j] - sum_feature)/std_feature
 
         # Merge the shitshow
