@@ -46,7 +46,7 @@ do_gnb = False
 
 # clustering
 do_kmeans = True
-do_kmeans_plot = False
+do_kmeans_plot = True
 
 # gridsearch
 do_gridsearch_svc = False
@@ -113,7 +113,7 @@ if do_kmeans:
     # print(label)
 
     pred_y = model.predict(x_test)
-    print(f"KMeans accuracy: {model.score(x_test, y_test)}")
+    print(f"KMeans accuracy: {accuracy_score(y_test, pred_y)}")
 
     model = KMeans(n_clusters=n_clusters)
     model.fit(df)
