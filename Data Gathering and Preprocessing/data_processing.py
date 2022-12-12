@@ -60,8 +60,8 @@ class Preprocessing():
         ffts = np.fft.fft2(data, axes=(-2, -2, -2))
         
         # Extracting the features
-        peaks = Preprocessing().peak_value_frequency(ffts[:np.shape(data)[0]//2], sampling_frequency)
-        pwrs = Preprocessing().cntrd_pwr(ffts[:np.shape(data)[0]//2], sampling_frequency, epsilon)
+        peaks = Preprocessing.peak_value_frequency(ffts[:np.shape(data)[0]//2], sampling_frequency)
+        pwrs = Preprocessing.cntrd_pwr(ffts[:np.shape(data)[0]//2], sampling_frequency, epsilon)
         
         return ffts, [peak + pwr for peak, pwr in zip(peaks, pwrs)]
 
@@ -428,7 +428,7 @@ class Preprocessing():
     @staticmethod
     def plot_accelerometer(input_file: str, start_offset: float = 0, stop_offset: float = 0, start: int = 1, stop: int = 3) -> None:
         try:
-            sampling_frequency, last_point = Preprocessing().get_sampling_frequency(input_file, start_offset, stop_offset)
+            sampling_frequency, last_point, size = Preprocessing.get_sampling_frequency(input_file, start_offset, stop_offset)
                 
             with open(input_file) as f:
                 data: list[list[float]] = []
