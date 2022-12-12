@@ -184,9 +184,9 @@ class Active_learning():
         # return input(f'FOR TESTING: enter the selected label, id = {id}\n')
 
     def find_most_ambiguous_id(self):
-        '''Finds the most ambiguous sample. The unlabeled sample with the greatest
+        """Finds the most ambiguous sample. The unlabeled sample with the greatest
             difference between most and second most probably classes is the most ambiguous.
-            Returns only the id of this sample'''
+            Returns only the id of this sample"""
         try:            
             # Fit the model with the datapoints that we have currently labeled.
             self.model.fit(self.preds[:, 3:], self.preds[:, 1])
@@ -222,7 +222,7 @@ class Active_learning():
         except ValueError:
             # self.X_pool.to_csv('xpool doet raar.csv')
             # print(preds)
-            raise ValueError(preds)
+            raise ValueError(self.preds)
 
     # def iteration_0(self):
     #     X_train = X_pool.iloc[self.labeled_ids]
@@ -292,4 +292,26 @@ class Active_learning():
         # if done == "N":
             # ask_activity = input() 
         # return self.activities
+
+    def check_test_set(self):
+        """Checks for overfitting based on randomized sampling. To avoid having to make them label the entire test set, we ask 
+        the designer to confirm n predicted test labels"""
+        test_ids = []
+        n_to_check = 30
+        while len(test_ids) != n_to_check:
+            while True:
+                random_id = random.randint(0, self.datapd.shape[0])
+                if random_id in self.X_test['ID'] and random_id not in test_ids:
+                    test_ids.append(random_id)
+                    break
+        random_samples = self.X_test['ID'][test_ids]
+        predictions = self.model.predict(random_samples)
+        error_count = 0
+        for i in range(len(test_ids)):
+            if predictions[i] != self.identify(self.X_test.at[test_ids[i], 'ID']):
+            # if predictions[i] != self.identify(self.datapd.iloc[random_id]['time'])
+                error_count += 1
+        return error_count
+
+    def add_unseen_activity
 
