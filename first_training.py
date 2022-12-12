@@ -34,7 +34,7 @@ do_knn = False
 do_svc = False
 
 # random forest
-do_rf = False
+do_rf = True
 plot_rf = False
 plot_rf_tree = False
 
@@ -45,8 +45,8 @@ do_gd = False
 do_gnb = False
 
 # clustering
-do_kmeans = False
-do_kmeans_plot = True
+do_kmeans = True
+do_kmeans_plot = False
 
 # gridsearch
 do_gridsearch_svc = False
@@ -57,7 +57,7 @@ do_randomsearch_svc = False
 do_randomsearch_rf = False
 
 # feature importance
-do_feature_importance = True
+do_feature_importance = False
 
 # ------ Data import ------ #
 # x = []
@@ -100,9 +100,9 @@ if do_kmeans:
     pca = PCA(2)
     df = pca.fit_transform(x_train)
     df_test = pca.fit_transform(x_test)
-    # df = pd.DataFrame(df)
-    # df_test = pd.DataFrame(df_test)
-    # print(df)
+    
+    x_train_pca = np.array(df)
+    x_test_pca = np.array(df_test)
 
     # ------ Training KMeans ------ #
 
@@ -113,7 +113,7 @@ if do_kmeans:
     # print(label)
 
     pred_y = model.predict(x_test)
-    print(f"KMeans accuracy: {accuracy_score(y_test, pred_y)}")
+    print(f"KMeans accuracy: {model.score(x_test, y_test)}")
 
     model = KMeans(n_clusters=n_clusters)
     model.fit(df)
@@ -124,6 +124,11 @@ if do_kmeans:
     print("Calculating centroids...")
     centroids = model.cluster_centers_
     u_labels = np.unique(label)
+    
+    cdict = {0: 'red', 1: 'blue', 2: 'green', 3: 'yellow', 4: 'brown', 5: 'purple', 6: 'orange', 7: 'pink'}
+    ldict = {}
+    for i in range(len(u_labels)):
+        ldict[i] = le.classes_[i]
 
     pred = model.predict(df_test)
 
@@ -138,27 +143,38 @@ if do_kmeans:
         fig, axs = plt.subplots(2, 2)
 
         axs[0, 0].title.set_text('Model')
-        axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
-        axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-            
-        # ------ prediction test data ------ #
+        for l in u_labels:
+            ii = np.where(label == l)
+            axs[0, 0].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
+        # axs[0, 0].scatter(df[:, 0], df[:, 1], c=label)
 
+        axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        axs[0, 0].legend()
+        
+        # ------ prediction test data ------ #
         # Make predictions on the test data
 
         axs[0, 1].title.set_text('new data points')
-        axs[0, 1].scatter(df_test[:, :1], df_test[:, 1:], c='red')
+        axs[0, 1].scatter(df_test[:, :1], df_test[:, 1:], c='grey')
         axs[0, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
 
         # create second plot which show new points whichout prediction
         axs[1, 0].title.set_text('New data on model')
-        axs[1, 0].scatter(df[:, :1], df[:, 1:], c=label)
-        axs[1, 0].scatter(df_test[:, :1], df_test[:, 1:], c='red')
+        for l in u_labels:
+            ii = np.where(label == l)
+            axs[1, 0].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
+        axs[1, 0].scatter(df_test[:, :1], df_test[:, 1:], c='grey')
         axs[1, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        axs[1, 0].legend()
 
         # create third plot which show the predictions of the new points
         axs[1, 1].title.set_text('result')
-        axs[1, 1].scatter(df[:, :1], df[:, 1:], c=label)
-        axs[1, 1].scatter(df_test[:, :1], df_test[:, 1:], c=pred)
+        for l in u_labels:
+            ii = np.where(label == l)
+            axs[1, 1].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
+        for l in u_labels:
+            ii = np.where(pred == l)
+            axs[1, 1].scatter(x_test_pca[ii, 0], x_test_pca[ii, 1], c=cdict[l])
         axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
         plt.legend()
         plt.show()
@@ -166,13 +182,18 @@ if do_kmeans:
         print("plotting model vs actual...")
         fig, axs = plt.subplots(2)
         axs[0].title.set_text('model result')
-        axs[0].scatter(df[:, :1], df[:, 1:], c=label)
+        for l in u_labels:
+            ii = np.where(label == l)
+            axs[0].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
         axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        axs[0].legend()
         
         axs[1].title.set_text('Actual result')
-        axs[1].scatter(df[:, :1], df[:, 1:], c=y_train)
-        axs[1].legend()
+        for l in u_labels:
+            ii = np.where(y_train == l)
+            axs[1].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
         axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        axs[1].legend()
         plt.show()
 
 # ------ knn ------ #
@@ -219,6 +240,7 @@ if do_rf:
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
     print(f"rf: {accuracy_train=}, {accuracy_test=}")
+    print(f"rf: {rf.score(x_test, y_test)=}")
     if plot_rf:
         print("Plotting RF model vs actual...")
         fig, axs = plt.subplots(2, 2)
