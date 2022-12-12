@@ -1,4 +1,5 @@
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.cluster import KMeans
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,6 +34,7 @@ class Active_learning():
 
         # Train the model with active learning
         self.training()
+        print(self.testing())
 
         # Plot the gini index, the margin and the test accuracy on every iteration
         plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
@@ -60,7 +62,7 @@ class Active_learning():
     def split_pool_test(self):
         # Parameters for the split
         random_state = 42
-        test_size = 0.2
+        test_size = 0.3
         # return to X_pool, X_test, y_pool, y_test
         return train_test_split(self.datapd, self.datapd['label'], test_size=test_size, random_state=random_state)
 
@@ -72,7 +74,7 @@ class Active_learning():
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
         # Set the most ambiguous points iteratively
-        self.iterate(1900)
+        self.iterate(13)
 
     def set_starting_points(self):
         """Generates training set by selecting random starting points, labeling them, and checking if there's an instance of every activity"""
@@ -102,6 +104,7 @@ class Active_learning():
         print('first stage is done!')
         # keep adding points until every activity is in the training set
         while not len(set(seen_activities)) == len(self.set_of_labels):
+            # print(len(set(seen_activities)), len(self.set_of_labels))
             while True:
                 # We again check if this label is in the pool and if it has not yet been classified.
                 random_id = random.randint(0, self.X_pool.shape[0])
@@ -293,7 +296,7 @@ class Active_learning():
             # ask_activity = input() 
         # return self.activities
 
-    def check_test_set(self):
+    def testing(self):
         """Checks for overfitting based on randomized sampling. To avoid having to make them label the entire test set, we ask 
         the designer to confirm n predicted test labels"""
         test_ids = []
@@ -301,17 +304,49 @@ class Active_learning():
         while len(test_ids) != n_to_check:
             while True:
                 random_id = random.randint(0, self.datapd.shape[0])
-                if random_id in self.X_test['ID'] and random_id not in test_ids:
+                if random_id in self.X_test[:, 0] and random_id not in test_ids:
                     test_ids.append(random_id)
                     break
-        random_samples = self.X_test['ID'][test_ids]
-        predictions = self.model.predict(random_samples)
+        # random_samples = np.zeros(n_to_check, self.number_of_features)
+        # random_samples = 
+        print(self.datapd.iloc[test_ids, 3:])
+        # print(np.where(self.X_test[:, 0] in test_ids))
+        # print(f'shape: = {self.X_test[np.where(self.X_test[:, 0] == test_ids[0]), 3:].shape}')
+        # random_samples = self.X_test[np.where(self.X_test[:, 0] == test_ids[0]), 3:]
+        # print(random_samples, random_samples.shape)
+        # for id in test_ids[1:]:
+        #     random_samples = np.append(random_samples, self.X_test[np.where(self.X_test[:, 0] == id), 3:], axis=0)
+        # print(random_samples)
+        # random_samples = self.X_test[np.where(self.X_test[:, 0] in test_ids), 3:]
+        predictions = self.model.predict(self.datapd.iloc[test_ids, 3:])
         error_count = 0
         for i in range(len(test_ids)):
-            if predictions[i] != self.identify(self.X_test.at[test_ids[i], 'ID']):
+            if predictions[i] != self.identify(test_ids[i]):
             # if predictions[i] != self.identify(self.datapd.iloc[random_id]['time'])
                 error_count += 1
         return error_count
 
-    def add_unseen_activity
-
+    
+    def clustered_starting_points(self):
+        """Select and label starting points by clustering without labels, then randomly selecting and labeling a number of points from each cluster"""
+        # vgm heet dit fuzzy k-means...
+        # iteraties verlagen door geen random, maar de meest certain punten te selecteren?
+        n_clusters = len(self.set_of_labels)
+        n_samples = 3
+        sample_ids = []
+        # train full dataset
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(self.X_pool)
+        predictions = kmeans.labels_
+        predictions_dict = {kmeans.labels_:i for i in range(len(self.X_pool))}
+        # take n samples from each cluster
+        if set(predictions) == self.set_of_labels:
+            clusters_dict = {label:predictions_dict[label] for label in self.set_of_labels for i in predictions_dict}
+            for label in clusters_dict:
+                # select all samples with label 
+                samples = clusters_dict[label]
+                for i in range(n_samples):
+                    sample_ids.append(random.choice(samples))
+        # label
+        for i in sample_ids:
+            self.identify(i)
+            self.labeled_ids.append(i)
