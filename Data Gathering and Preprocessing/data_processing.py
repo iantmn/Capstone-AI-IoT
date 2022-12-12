@@ -486,7 +486,7 @@ class Preprocessing():
             return mean, std, min_inter, max_inter
 
         except FileNotFoundError:
-            raise FileNotFoundError(f"File {input_file} at the relative path not found!")
+            raise FileNotFoundError(f"File '{input_file}' at the relative path not found!")
         except ValueError:
             raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")
 
