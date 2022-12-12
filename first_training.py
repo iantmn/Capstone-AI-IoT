@@ -26,7 +26,7 @@ np.random.seed(42)
 
 # ------ Settings ------ #
 
-n_clusters = 3
+n_clusters = 4
 train_size = 0.8
 
 # supervised learning
