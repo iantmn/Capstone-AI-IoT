@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.metrics.pairwise import euclidean_distances
 from collections.abc import Sequence
 import pickle
 import random
@@ -131,33 +132,60 @@ class Active_learning():
         # Give labels to the ID's in the pandaset
         for i in range(len(self.labeled_ids)):
             self.X_pool.at[self.labeled_ids[i], 'label'] = seen_activities[i]
-    
+            
     def clustered_starting_points(self):
-        """Select and label starting points by clustering without labels, then selecting and labeling a number of 
-        the most certain points from each cluster
-        """
+        """Select and label starting points by clustering without labels, then randomly selecting and labeling a number of points from each cluster"""
+        # iteraties verlagen door geen random, maar de meest certain punten te selecteren?
         n_clusters = len(self.set_of_labels)
         n_samples = 3
-        # print(type(self.X_pool.iloc[0, 0]))
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42).fit(self.X_pool.iloc[:, 3:])
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(self.X_pool.iloc[:,3:])
         min_indices = []
-        predictions = np.array(kmeans.predict(self.X_pool.iloc[:, 3:]))
-        predictions_lst = predictions.tolist()
-        # print(type(predictions_lst))
-        X_dist = np.transpose(self.X_pool.iloc[:, 3:])**2
-        center_dists = np.array([X_dist[i][x] for i,x in enumerate(predictions_lst)]) 
-        print(len(center_dists))
-        # add n_samples points of every label to min_indices
+        clust_centers = {label:kmeans.cluster_centers_[label] for label in range(len(self.set_of_labels))}
+        predictions = np.array(kmeans.predict(self.X_pool.iloc[:,3:]))
+        # add id column to predictions
+        ids = self.X_pool.iloc[:,0]
+        y = np.c_[ids, predictions]
+        # y = np.insert(predictions, 1, list(self.X_pool.iloc[:,0]))
         for i in range(n_samples):
             for label in np.unique(kmeans.labels_):
-                X_label_indices = np.where(predictions[0]==label)[0]
-                poss_new_ids = np.delete(X_label_indices, min_indices)
-                min_indices.append(poss_new_ids[np.argmin(center_dists[label==predictions[0]])])
-        for i in min_indices:
-            # got_labeled = self.identify(self.datapd.iloc[min_indices[i]]['time'])
-            got_labeled = self.identify(min_indices[i])  # for testing
-            self.labeled_ids.append(got_labeled)
-            self.X_pool.at[min_indices[i], 'label'] = got_labeled
+                center = clust_centers[label]
+                lowest_dist = 1000000000
+                X_label_ids = np.where(y[:,1]==label)
+                poss_new_ids = np.delete(X_label_ids, min_indices)
+                for sample_id in list(poss_new_ids):
+                    pair = [self.X_pool.iloc[sample_id, :3], center]
+                    print(pair)
+                    dist = euclidean_distances(np.array(pair))
+                    if dist < lowest_dist:
+                        lowest_dist = dist
+                        min_indices.append(sample_id)
+    
+    # def clustered_starting_points(self):
+    #     """Select and label starting points by clustering without labels, then selecting and labeling a number of 
+    #     the most certain points from each cluster
+    #     """
+    #     n_clusters = len(self.set_of_labels)
+    #     n_samples = 3
+    #     # print(type(self.X_pool.iloc[0, 0]))
+    #     kmeans = KMeans(n_clusters=n_clusters, random_state=42).fit(self.X_pool.iloc[:, 3:])
+    #     min_indices = []
+    #     predictions = np.array(kmeans.predict(self.X_pool.iloc[:, 3:]))
+    #     predictions_lst = predictions.tolist()
+    #     # print(type(predictions_lst))
+    #     X_dist = np.transpose(self.X_pool.iloc[:, 3:])**2
+    #     center_dists = np.array([X_dist[i][x] for i,x in enumerate(predictions_lst)]) 
+    #     print(len(center_dists))
+    #     # add n_samples points of every label to min_indices
+    #     for i in range(n_samples):
+    #         for label in np.unique(kmeans.labels_):
+    #             X_label_indices = np.where(predictions[0]==label)[0]
+    #             poss_new_ids = np.delete(X_label_indices, min_indices)
+    #             min_indices.append(poss_new_ids[np.argmin(center_dists[label==predictions[0]])])
+    #     for i in min_indices:
+    #         # got_labeled = self.identify(self.datapd.iloc[min_indices[i]]['time'])
+    #         got_labeled = self.identify(min_indices[i])  # for testing
+    #         self.labeled_ids.append(got_labeled)
+    #         self.X_pool.at[min_indices[i], 'label'] = got_labeled
 
     def iterate(self, max_iter):
         # This function is the iterative process of active learning. Labeling the most ambiguous points

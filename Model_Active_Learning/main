@@ -3,8 +3,8 @@ import pandas as pd
 
 def main():
     labels = set(('stairs_up', 'stairs_down', 'walking', 'running'))
-    al = Active_learning(r'running_data/features_Walking_scaled.csv', labels)
+    al = Active_learning(r'Model_Active_Learning/running_data/features_Walking_scaled.csv', labels)
     # pd.display(al.datapd)
 
 if __name__ == '__main__':
-    main()  
+    main()
