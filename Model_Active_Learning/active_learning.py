@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from collections.abc import Sequence
+import pickle
 import random
 import time
 
@@ -34,6 +35,10 @@ class Active_learning():
 
         # Train the model with active learning
         self.training()
+
+        with open('model.txt', 'wb') as f:
+            pickle.dump(self.model, f)
+
         # print(self.testing())
 
         # Plot the gini index, the margin and the test accuracy on every iteration
@@ -147,11 +152,11 @@ class Active_learning():
     def set_ambiguous_point(self) -> int:
         """Lets designer label ambiguous point"""          
         # Determine the ID of the most ambiguous datapoint      
-        get_id_to_label, margin = self.find_most_ambiguous_id()
+        get_id_to_label, margin, les_probs = self.find_most_ambiguous_id()
         # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
         # Get what label this ID is supposed to get
-        new_label = self.identify(get_id_to_label)  # just for testing
+        new_label = self.identify(get_id_to_label, les_probs)  # just for testing
 
         # Extract the row from the unpredicted array
         t = self.unpreds[self.unpreds[:, 0] == get_id_to_label, :]
@@ -166,10 +171,12 @@ class Active_learning():
         # Return the label and the margin
         return get_id_to_label, margin
 
-    def identify(self, id):
+    def identify(self, id, les_probs=None):
         """This function will call the the identification system from Gijs en Timo, for now it has been automated"""
         # time.sleep(0.2)
         # print(id)
+        if les_probs is not None:
+            print(les_probs, les_probs.index(max(les_probs)))
         if 'old' in self.data_file or 'time_features' in self.data_file:
             if id < 91:
                 return 'stairs_up'
@@ -216,11 +223,14 @@ class Active_learning():
             # Make it an average and add the lowest margin
             self.gini_margin_acc[-1][0] /= len(unlbld)
             self.gini_margin_acc[-1][1] = lowest_margin
+
+            les_probs = self.model.predict_proba(self.unpreds[np.where(self.unpreds[:, 0] == lowest_margin_sample_id)[0], 3:]).tolist()[0]
+
             # Add the accuracy, this is only for a nice plot and can be deleted afterwards.
             self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
             # Oeh fun result get better with more samples Oeh!
-            print(self.gini_margin_acc[-1])
-            return lowest_margin_sample_id, lowest_margin
+            # print(self.gini_margin_acc[-1])
+            return lowest_margin_sample_id, lowest_margin, les_probs
         # Exception mostly for testing idk if it will every be handydany again
         except ValueError:
             # self.X_pool.to_csv('xpool doet raar.csv')
