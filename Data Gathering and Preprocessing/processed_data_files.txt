@@ -1,10 +1,19 @@
 data-lopen/Alan data/Stairs-20221201T092013Z-001/Stairs/Accelerometer_Data_1_stairs_upwards[1].txt
-data-lopen/Data Timo/Accelerometer Data 2022-11-29 11-11-24.txt
+data-lopen/Data Timo/Timo_trap_op_1.txt
+data-lopen/Data Timo/Timo_trap_op_2.txt
+data-lopen/Data Timo/Timo_trap_op_3.txt
 data-lopen/Alan data/Stairs-20221201T092013Z-001/Stairs/Accelerometer_Data_2_stairs_upwards[2].txt
 data-lopen/Alan data/Stairs-20221201T092013Z-001/Stairs/Accelerometer_Data_3_stairs_upwards[1].txt
-data-lopen/Data Timo/Accelerometer Data 2022-11-29 11-38-43.txt
+data-lopen/Data Timo/Timo_trap_af_1.txt
+data-lopen/Data Timo/Timo_trap_af_2.txt
+data-lopen/Data Timo/Timo_trap_af_3.txt
+data-lopen/Data Timo/Timo_trap_af_4.txt
 data-lopen/Alan data/Stairs-20221201T092013Z-001/Stairs/Accelerometer_Data_1_stairs_downwards[1].txt
 data-lopen/Alan data/Stairs-20221201T092013Z-001/Stairs/Accelerometer_Data_2_stairs_downwards[1].txt
 data-lopen/Alan data/Stairs-20221201T092013Z-001/Stairs/Accelerometer_Data_3_stairs_downwards[1].txt
+data-lopen/Data Timo/Timo_hardlopen_1.txt
+data-lopen/Data Timo/Timo_hardlopen_2.txt
+data-lopen/Data Timo/Timo_hardlopen_3.txt
+data-lopen/Data Timo/Timo_hardlopen_4.txt
+data-lopen/Data Timo/Timo_hardlopen_5.txt
 data-lopen/Alan data/Walking-20221201T092023Z-001/Walking/Accelerometer_Data_walking_28-11[2].txt
-data-lopen/Alan data/Walking-20221201T092023Z-001/Walking/Accelerometer_Data_walking_29-11[1].txt
