@@ -4,11 +4,9 @@ from datetime import datetime
 
 import js2py
 
-eval_res, tempfile = js2py.run_file("GoPro_Telemetry_Code.js")
-print(tempfile.get_ACCL_GoPro())
 
 
-with open('output_path.json', encoding='utf-8') as inputfile:
+with open('output_path_kamer.json', encoding='utf-8') as inputfile:
     df = json.load(inputfile)
     df = df["1"]["streams"]["ACCL"]["samples"]
 
@@ -33,7 +31,7 @@ with open('output_path.json', encoding='utf-8') as inputfile:
         for j in range(len(dct["value"])):
             lst[i].append(dct["value"][j])
 
-with open('csvfile.csv', 'w') as f:
+with open('csvfile_kamer.csv', 'w') as f:
     for i in range(len(lst)):
         for j in range(len(lst[i])):
             f.write(f"{lst[i][j]}")
