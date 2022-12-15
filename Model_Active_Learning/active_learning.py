@@ -34,7 +34,7 @@ class Active_learning():
 
         # Train the model with active learning
         self.training()
-        print(self.testing())
+        # print(self.testing())
 
         # Plot the gini index, the margin and the test accuracy on every iteration
         plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
@@ -62,7 +62,7 @@ class Active_learning():
     def split_pool_test(self):
         # Parameters for the split
         random_state = 42
-        test_size = 0.3
+        test_size = 0.2
         # return to X_pool, X_test, y_pool, y_test
         return train_test_split(self.datapd, self.datapd['label'], test_size=test_size, random_state=random_state)
 
@@ -74,7 +74,7 @@ class Active_learning():
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
         # Set the most ambiguous points iteratively
-        self.iterate(13)
+        self.iterate(190)
 
     def set_starting_points(self):
         """Generates training set by selecting random starting points, labeling them, and checking if there's an instance of every activity"""

@@ -3,7 +3,7 @@ import pandas as pd
 
 def main():
     labels = set(('stairs_up', 'stairs_down', 'walking'))
-    al = Active_learning(r'features_Walking_scaled_time_features.csv', labels)
+    al = Active_learning(r'features_Walking_scaled_old.csv', labels)
     # pd.display(al.datapd)
 
 if __name__ == '__main__':
