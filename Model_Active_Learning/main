@@ -2,8 +2,8 @@ from active_learning import Active_learning
 import pandas as pd
 
 def main():
-    labels = set(('stairs_up', 'stairs_down', 'walking'))
-    al = Active_learning(r'features_Walking_scaled_old.csv', labels)
+    labels = set(('stairs_up', 'stairs_down', 'walking', 'running'))
+    al = Active_learning(r'running_data/features_Walking_scaled.csv', labels)
     # pd.display(al.datapd)
 
 if __name__ == '__main__':
