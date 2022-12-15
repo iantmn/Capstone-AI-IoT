@@ -1,4 +1,5 @@
 
+function get_ACCL_GoPro(filename, output_file){
 const gpmfExtract = require('gpmf-extract');
 const goproTelemetry = require(`gopro-telemetry`);
 const fs = require('fs');
@@ -14,3 +15,4 @@ gpmfExtract(file)
     });
   })
   .catch(error => console.error(error));
+}

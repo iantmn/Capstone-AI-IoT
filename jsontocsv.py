@@ -1,55 +1,43 @@
-# # Python program to convert
-# # JSON file to CSV
-
-
-
-# import json
-# import csv
-
-
-# # Opening JSON file and loading the data
-# # into the variable data
-# with open('output_path.json') as json_file:
-# 	data = json.load(json_file)
-
-# Accelerometer_data = data
-# key = 'ACCL'
-
-# new_data = dict()
-# for key, value in Accelerometer_data.items():
-#     if not isinstance(value, dict):
-#         new_data[key] = value
-#     else:
-#         for k, v in value.items():
-#             new_data[key + "_" + k] = v
-
-# data_file = new_data
-
-# # now we will open a file for writing
-# data_file = open('data_file.csv', 'w')
-
-# # create the csv writer object
-# csv_writer = csv.writer(data_file)
-
-# # Counter variable used for writing
-# # headers to the CSV file
-# count = 0
-
-# for emp in Accelerometer_data:
-# 	if count == 0:
-
-# 		# Writing headers of CSV file
-# 		header = emp.keys()
-# 		csv_writer.writerow(header)
-# 		count += 1
-
-# 	# Writing data of CSV file
-# 	csv_writer.writerow(emp.values())
-
-# data_file.close()
+import json
 import pandas as pd
+from datetime import datetime
+
+import js2py
+
+eval_res, tempfile = js2py.run_file("GoPro_Telemetry_Code.js")
+print(tempfile.get_ACCL_GoPro())
+
 
 with open('output_path.json', encoding='utf-8') as inputfile:
-    df = pd.read_json(inputfile)
+    df = json.load(inputfile)
+    df = df["1"]["streams"]["ACCL"]["samples"]
 
-df.to_csv('csvfile.csv', encoding='utf-8', index=False)
+    lst: list[list[str | float]] = []
+    lst.append([])
+    dct = df[0]
+    time0 = dct["date"]
+    time0 = time0[11:-1]
+
+    time0 = datetime.strptime(time0, '%H:%M:%S.%f')
+    lst[0].append(time0-time0)
+    for j in range(len(dct["value"])):
+        lst[0].append(dct["value"][j])
+
+    for i in range(1, len(df)):
+        dct = df[i]
+        lst.append([])
+        time = dct["date"]
+        time = time[11:-1]
+        time = datetime.strptime(time, '%H:%M:%S.%f')
+        lst[i].append(time-time0)
+        for j in range(len(dct["value"])):
+            lst[i].append(dct["value"][j])
+
+with open('csvfile.csv', 'w') as f:
+    for i in range(len(lst)):
+        for j in range(len(lst[i])):
+            f.write(f"{lst[i][j]}")
+            if j + 1 < len(lst[i]):
+                f.write(f',')
+            else:
+                f.write('\n')
