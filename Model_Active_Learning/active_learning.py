@@ -11,6 +11,7 @@ import pickle
 import random
 import time
 
+random.seed(42)
 
 class Active_learning():
     def __init__(self, data_file: str, set_of_labels: Sequence):
@@ -81,11 +82,11 @@ class Active_learning():
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
 
-        self.clustered_starting_points(1)
+        # self.clustered_starting_points(1)
         # pd.to_csv('hello?', self.datapd)
         
         # Set the most ambiguous points iteratively
-        self.iterate(100)
+        self.iterate(150)
 
     def set_starting_points(self, n_samples):
         """Generates training set by selecting random starting points, labeling them, and checking if there's an instance of every activity"""
@@ -113,21 +114,23 @@ class Active_learning():
 
         # The determined number of random points were executed. We now set random points as long as not all predicted classes were found.
         print('first stage is done!')
+
         # keep adding points until every activity is in the training set
-        while not len(set(seen_activities)) == len(self.set_of_labels):
-            # print(len(set(seen_activities)), len(self.set_of_labels))
-            while True:
-                # We again check if this label is in the pool and if it has not yet been classified.
-                random_id = random.randint(0, self.X_pool.shape[0])
-                if random_id not in self.labeled_ids and random_id in self.X_pool['ID']:
-                    break
-            # This all is the same as above
-            self.labeled_ids.append(random_id)
-            # got_labeled = self.identify(self.datapd.iloc[random_id]['time'])
-            got_labeled = self.identify(random_id)
-            if got_labeled not in self.set_of_labels:
-                self.set_of_labels.add(got_labeled)
-            seen_activities.append(got_labeled)
+        # We added samples as the centre of each cluster so we don't really need this bit anymore
+        # while not len(set(seen_activities)) == len(self.set_of_labels):
+        #     # print(len(set(seen_activities)), len(self.set_of_labels))
+        #     while True:
+        #         # We again check if this label is in the pool and if it has not yet been classified.
+        #         random_id = random.randint(0, self.X_pool.shape[0])
+        #         if random_id not in self.labeled_ids and random_id in self.X_pool['ID']:
+        #             break
+        #     # This all is the same as above
+        #     self.labeled_ids.append(random_id)
+        #     # got_labeled = self.identify(self.datapd.iloc[random_id]['time'])
+        #     got_labeled = self.identify(random_id)
+        #     if got_labeled not in self.set_of_labels:
+        #         self.set_of_labels.add(got_labeled)
+        #     seen_activities.append(got_labeled)
 
         # We have found a sample of all the labels that we expected
         print('second stage is done!')
@@ -151,19 +154,19 @@ class Active_learning():
             x = X[np.where(X[:,1]==label)[0], :]
             for _ in range(n_samples): # For now
                 # Transform
-                total_dists = np.sum(kmeans.transform(x[:, 3:]), axis=1)
+                total_dists = np.sum(kmeans.transform(x[:, 3:])**2, axis=1)
                 # Add certain samples
                 cert_indices.append(x[np.argmin(total_dists), 0])
-                print(cert_indices)
+                # print(cert_indices)
                 x = np.delete(x, x[np.argmin(total_dists), 0])
         for e in cert_indices:
             # got_labeled = self.identify(self.datapd.iloc[min_indices[i]]['time'])
             got_labeled = self.identify(e)  # for testing
             self.labeled_ids.append(e)
             # print(np.where(self.X_pool.iloc[:, 0] == e)[0][0])
-            line = self.X_pool.iloc[np.where(self.X_pool.iloc[:, 0] == e)[0][0], :]
-            # print(line, line.shape)
-            line[1] = got_labeled
+            line = self.X_pool.iloc[np.where(self.X_pool.iloc[:, 0] == e)[0][0], :].copy()
+            # print(line)
+            line.at['label'] = got_labeled
             line = np.array(line).reshape(1, -1)
             # print(line.shape, self.preds.shape)
             self.preds = np.append(self.preds, line, axis=0)
@@ -196,7 +199,7 @@ class Active_learning():
         # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
         # Get what label this ID is supposed to get
-        new_label = self.identify(get_id_to_label, les_probs)  # just for testing
+        new_label = self.identify(get_id_to_label, les_probs=None)  # just for testing
 
         # Extract the row from the unpredicted array
         t = self.unpreds[self.unpreds[:, 0] == get_id_to_label, :]
