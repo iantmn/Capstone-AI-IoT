@@ -5,6 +5,7 @@ This document is for testing which models we are going to use. Exploration is be
 # ------ import ------ #
 import numpy as np
 import pandas as pd
+from util import computeFeatureImportance
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier as KNN
 from sklearn.svm import SVC
@@ -20,14 +21,14 @@ np.random.seed(42)
 # gridsearch
 do_gridsearch_svc = False
 do_gridsearch_knn = False
-do_gridsearch_rf = True
+do_gridsearch_rf = False
 
 # randomsearch
 do_randomsearch_svc = False
 do_randomsearch_rf = False
 
 # feature importance
-do_feature_importance = False
+do_feature_importance = True
 # ------ Data import ------ #
 
 print("Importing data...")
@@ -36,8 +37,8 @@ print("Data imported")
 
 # ------ train, test split ------ #
 
-print("Splitting data into train and test...")
-train, test = train_test_split(x, train_size=0.8)
+print("shuffling data and splitting data into train and test...")
+train, test = train_test_split(x, train_size=0.8, shuffle=True)
 
 # ------ x, y split ------ #
 
@@ -92,3 +93,12 @@ if do_gridsearch_rf:
     print("Best parameters for gridsearch rf:")
     print(clf.best_params_)
     print(clf.best_score_)
+
+# ------ feature importance ------ #
+
+if do_feature_importance:
+    print("calculating feature importance...")
+    imp = computeFeatureImportance(x_train, y_train, n_repeats=50)
+    total = imp["feature_importance"].sum()
+    imp["feature_importance"] = imp["feature_importance"] / total
+    print(imp)

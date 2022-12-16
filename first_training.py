@@ -74,8 +74,8 @@ print(f"Shape of data: {x.shape}")
 
 # ------ train, test split ------ #
 
-print("Splitting data into train and test...")
-train, test = train_test_split(x, train_size=train_size)
+print("shuffling data and splitting data into train and test...")
+train, test = train_test_split(x, train_size=train_size, shuffle=True)
 
 # ------ x, y split ------ #
 
