@@ -2,6 +2,7 @@ import json
 import numpy as np
 import pandas as pd
 import math as m
+import in_place 
 import matplotlib.pyplot as plt
 from collections.abc import Collection
 
@@ -10,6 +11,19 @@ class Preprocessing():
     def __init__(self, action_ID: str = "") -> None:
         self.action_ID = action_ID
         self.output_file = f'features_{action_ID}.txt'
+
+    @staticmethod
+    def csv_to_txt(filename):
+        """This function is to make a csv file from the GoPro into csv file that has usable time"""
+        with in_place.InPlace(filename) as f:
+            for line in f:
+                time = line.split(',')[0]
+                new_time = time.split(':')
+                # print(line, time, new_time)
+                # print(f'{new_time[2]}.')
+                new_time = str(int(new_time[0])*3600 + int(new_time[1])*60 + float(new_time[2]))
+                # print(time, new_time)
+                f.write(line.replace(time, new_time))
 
     def time(self, data: Collection, samples_window: float) -> tuple[float, float, float, float, float]:
         """Function to extract feature from the time-domain data
@@ -146,7 +160,7 @@ class Preprocessing():
                 for _ in range(5): f.readline() # TODO change the range back to 4!
             elif file_extension == 'csv':
                 # Skip the header lines, and the first line
-                for _ in range(2): f.readline()
+                pass
             # If the file extension is not supported
             else:
                 raise NotImplementedError(f"Filetype {input_file.split('.')[-1]} is not implemented")
@@ -167,7 +181,7 @@ class Preprocessing():
             # print(size, t0, last_point)
             return sampling_frequency, last_point, size
 
-    def windowing(self, input_file: str, label: float, video_file: str = '',
+    def windowing(self, input_file: str, label: float, video_file: str = '', data_from_gopro = True,
             start_offset: float = 0, stop_offset: float = 0,
             size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3,
             epsilon: float = 0.1, do_plot: bool = False, do_scale = False) -> None:
@@ -205,6 +219,9 @@ class Preprocessing():
         # This list is used when writing to the file to know when a window starts.
         timestamp_counter = 0
         timestamp_list: list[float] = []
+
+        if data_from_gopro is True:
+            Preprocessing.csv_to_txt(input_file)
 
         # check if the file that we want to extract the data from has already been used in this action_ID
         already_processed = False
@@ -277,12 +294,13 @@ class Preprocessing():
 
         try:
             # get sampling frequency and the last point
+            temp = -1
             sampling_frequency, last_point, size = self.get_sampling_frequency(input_file, start_offset, stop_offset, size)
 
             # Variable for the previous window and the current window
             prev_window: list[list[float]] = []
             current_window: list[list[float]] = []
-            
+            temp = -2
             # Amount of samples per window
             samples_window = int(size * sampling_frequency) + 1 # This should be the same as m.ceil (now the math library is not needed anymore)
             # Amount of samples in the offset
@@ -293,13 +311,19 @@ class Preprocessing():
 
             # When the end of a datafile is reached, this value is set to False and the loop is exited
             not_finished = True
-            
+            temp = 0
             # Opening the data file again and skipping the header lines.
             k = 0
             with open(input_file) as f:
+                temp = 1
                 # print(start_offset, stop_offset, size)
-                for _ in range(4 + int(start_offset * sampling_frequency)): f.readline()
+                if '.csv' in input_file:
+                    number_of_passing_lines = 0
+                elif '.txt' in input_file:
+                    number_of_passing_lines = 4
+                for _ in range(number_of_passing_lines + int(start_offset * sampling_frequency)): f.readline()
                 # Opening the output file; the extracted features will be put in the file
+                temp = 2
                 with open(self.output_file, 'a') as g:
                     # While the end of the file is not yet reached
                     while not_finished:
@@ -335,7 +359,7 @@ class Preprocessing():
                             # The rest of the samples are new and read from the data file
                             for i in range(samples_window - samples_offset):
                                 current_window[i] = prev_window[i + samples_offset].copy()
-                                
+                            temp = 3
                             # Read new lines from the file and add these to the end of the current file
                             try:
                                 for i in range(samples_offset):
@@ -428,7 +452,7 @@ class Preprocessing():
         except FileNotFoundError:
             raise FileNotFoundError(f"File {input_file} at the relative path not found!")
         except ValueError:
-            raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")
+            raise ValueError(f"FILE CORRUPTED: cannot convert data to float!: {temp}")
         
     @staticmethod
     def plot_accelerometer(input_file: str, start_offset: float = 0, stop_offset: float = 0, start: int = 1, stop: int = 3) -> None:
@@ -532,7 +556,6 @@ class Preprocessing():
         except ValueError:
             raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")
 
-
     def SuperStandardScaler(self, input_file: str) -> None:
         """Scale the features with their respecitive scale. All centroid, peak and total power are put on the same scale.
         By setting do_scale in windowing to True this function is called automatically, else build a object of Preprocessing in main
@@ -573,7 +596,7 @@ class Preprocessing():
         sensors_amount = (data_array.shape[1])//fa
         datapoints_amount = data_array.shape[0] - 1
 
-        print(f'fa: {fa}, sensors_amount: {sensors_amount}')
+        # print(f'fa: {fa}, sensors_amount: {sensors_amount}')
 
         if sensors_amount > 6:
             raise ValueError('You have used more than 6 sensors, we have not yet implemented ')
