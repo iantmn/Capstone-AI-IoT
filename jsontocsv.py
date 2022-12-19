@@ -6,7 +6,7 @@ import js2py
 
 
 
-with open('output_path_kamer.json', encoding='utf-8') as inputfile:
+with open('output_path_Skipp.json', encoding='utf-8') as inputfile:
     df = json.load(inputfile)
     df = df["1"]["streams"]["ACCL"]["samples"]
 
@@ -31,7 +31,7 @@ with open('output_path_kamer.json', encoding='utf-8') as inputfile:
         for j in range(len(dct["value"])):
             lst[i].append(dct["value"][j])
 
-with open('csvfile_kamer.csv', 'w') as f:
+with open('csvfile_skip.csv', 'w') as f:
     for i in range(len(lst)):
         for j in range(len(lst[i])):
             f.write(f"{lst[i][j]}")
