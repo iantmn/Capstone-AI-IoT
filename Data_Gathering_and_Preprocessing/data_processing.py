@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 import math as m
 import matplotlib.pyplot as plt
-from collections.abc import Collection
+
+from collections.abc import Collection, Iterable
 
 
 class Preprocessing():
@@ -626,3 +627,8 @@ class Preprocessing():
         # Save as csv file
         np.savetxt(f'features_{self.action_ID}_scaled.csv', data_array, fmt='%s', delimiter=',')
 
+
+def empty_files(files: Iterable[str]) -> None:
+    for file in files:
+        with open(file, 'w') as f:
+            f.write('')
