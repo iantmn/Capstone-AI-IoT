@@ -167,7 +167,7 @@ class Preprocessing():
             # print(size, t0, last_point)
             return sampling_frequency, last_point, size
 
-    def windowing(self, input_file: str, label: float, video_file: str = '',
+    def windowing(self, input_file: str, video_file: str = '', label: float = '',
             start_offset: float = 0, stop_offset: float = 0,
             size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3,
             epsilon: float = 0.1, do_plot: bool = False, do_scale = False) -> None:
@@ -181,7 +181,7 @@ class Preprocessing():
             input_file (str): The relative path of the file with the data, seen from the main file.
             video_file (str, optional): The relative path of the file with the corresponding video the captures the process of
             capturing the data, seen from the main file. The path is only printed to an output file. Defaults to ''.
-            label (str): The name of the label of the activity.
+            label (str): The name of the label of the activity. Defaults to ''.
             size (float, optional): Size of the window in seconds. Defaults to 2.
             start_offset (float, optional): Skip the first r seconds of the data. Defaults to 0.
             stop_offset (float, optional): Skipt the last r seconds of the data. Defaults to 0.
