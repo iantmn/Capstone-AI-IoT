@@ -167,7 +167,7 @@ class Preprocessing():
             # print(size, t0, last_point)
             return sampling_frequency, last_point, size
 
-    def windowing(self, input_file: str, label: float,
+    def windowing(self, input_file: str, video_file: str = '', label: float = '',
             start_offset: float = 0, stop_offset: float = 0,
             size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3,
             epsilon: float = 0.1, do_plot: bool = False, do_scale = False) -> None:
@@ -179,8 +179,9 @@ class Preprocessing():
 
         Args:
             input_file (str): The relative path of the file with the data, seen from the main file.
-            action_ID (str): The name of the recorder activity.
-            label (str): The name of the label of the activity.
+            video_file (str, optional): The relative path of the file with the corresponding video the captures the process of
+            capturing the data, seen from the main file. The path is only printed to an output file. Defaults to ''.
+            label (str): The name of the label of the activity. Defaults to ''.
             size (float, optional): Size of the window in seconds. Defaults to 2.
             start_offset (float, optional): Skip the first r seconds of the data. Defaults to 0.
             stop_offset (float, optional): Skipt the last r seconds of the data. Defaults to 0.
@@ -217,19 +218,18 @@ class Preprocessing():
             pass
 
         # This section lets you input y/n if you want to write the features to the file. Prevent adding the same data twice
-        done = False
-        while not done:
+        while True:
             # Check if the file was already processed, if it is, ask if the file should be processed again.
             if already_processed:
                 print('The file is already processed at least once.\n')
             write_to_file = input(f"Do you want to save the extracted features '{label}' for '{self.action_ID}'? y/n\n")
             # Check if the input is valid
             if write_to_file == 'y':
-                done = True
                 with open('processed_data_files.txt', 'a') as f:
-                    f.write(f"{input_file}\n")
+                    f.write(f"{input_file}")
+                break
             elif write_to_file == 'n':
-                done = True
+                break
             else:
                 print("Input not valid! Try again")
 
@@ -413,6 +413,11 @@ class Preprocessing():
 
                             k += 1
                             current_ID += 1
+                            
+                    # Writing the first and the last index and the relative path to the video to the output
+                    # file with the files that are used.
+                    with open(r'processed_data_files.txt', 'a') as h:
+                        h.write(f",{last_index},{last_index + current_ID - 1},{video_file}\n")
             # print(k)
             plt.show()
 
@@ -421,18 +426,35 @@ class Preprocessing():
                 self.SuperStandardScaler(self.output_file)
                         
         except FileNotFoundError:
-            raise FileNotFoundError(f"File {self.input_file} at the relative path not found!")
+            raise FileNotFoundError(f"File {input_file} at the relative path not found!")
         except ValueError:
             raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")
         
     @staticmethod
     def plot_accelerometer(input_file: str, start_offset: float = 0, stop_offset: float = 0, start: int = 1, stop: int = 3) -> None:
+        """Function to plot the time-domain curves of data from an input-file
+
+        Args:
+            input_file (str): The relative path of the file with the data, seen from the main file.
+            start_offset (float, optional): Skip the first r seconds of the data. Defaults to 0.
+            stop_offset (float, optional): Skipt the last r seconds of the data. Defaults to 0.
+            start (int, optional): Start column from the data file. Defaults to 1.
+            stop (int, optional): Last column (including) of the data file. Defaults to 3.
+
+        Raises:
+            FileNotFoundError: Error raised if the given input-file cannot be found.
+            ValueError: Error raised if a data point cannot be converted to a float.
+        """        
         try:
-            sampling_frequency, last_point, size = Preprocessing.get_sampling_frequency(input_file, start_offset, stop_offset)
+            # Calculate the sampling frequency and the last timestamp (the third parameter, size, is not used)
+            sampling_frequency, last_point = Preprocessing.get_sampling_frequency(input_file, start_offset, stop_offset)[0:2]
                 
+            # Try opening the input-file
             with open(input_file) as f:
+                # List with the datapoints, each row will have the data of one sensor
                 data: list[list[float]] = []
-                for _ in range(5 + int(start_offset * sampling_frequency)): f.readline()
+                # Skip the first 4 lines (contains no data) + the amount of samples in the start_offset
+                for _ in range(4 + int(start_offset * sampling_frequency)): f.readline()
 
                 not_finished = True
                 while not_finished:
@@ -455,30 +477,50 @@ class Preprocessing():
         except ValueError:
             raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")
         
+        # Define the time axis
         time = np.arange(0, len(data) / sampling_frequency, 1 / sampling_frequency)
-        # time2 = np.arange(0, len(data2) / sampling_frequency, 1 / sampling_frequency)
         
+        # Plot
         fig, axes = plt.subplots(1, 1)
         axes.plot(time, data)
-        # axes[0].plot(time2, data2)
         plt.show()
 
 
     @staticmethod
-    def get_time_stats(input_file) -> tuple[float, float, float, float]:
+    def get_time_stats(input_file: str) -> tuple[float, float, float, float]:
+        """Function to get some stats about the sampling period (average period, standard deviation, minimal and maximal period).
+
+        Args:
+            input_file (str): The relative path of the file with the data, seen from the main file.
+
+        Raises:
+            FileNotFoundError: Error raised if the given input-file cannot be found.
+            ValueError: Error raised if a data point cannot be converted to a float.
+
+        Returns:
+            tuple[float, float, float, float]: The results: average period, standard deviation, minimal period and maximal period
+        """        
         try:
+            # Try opening the file
             with open(input_file) as f:
+                # Read the first lines (does not contain data)
                 for _ in range(4): f.readline()
 
+                # Array with the periods
                 intervals: np.ndarray[float] = np.array([])
+                # First time sample
                 t0 = float(f.readline().strip().split(',')[0])
                 for line in f:
+                    # Checking if the line is not empty (last line is empty)
                     if line != '':
+                        # Second time sample
                         t1 = float(line.strip().split(',')[0])
+                        # Saving the difference
                         intervals = np.append(intervals, t1 - t0)
+                        # Setting the second time sample as the first
                         t0 = t1
 
-            # print(intervals)
+            # Calculating the features
             mean = np.mean(intervals)
             std = np.std(intervals)
             min_inter = min(intervals)
@@ -486,7 +528,7 @@ class Preprocessing():
             return mean, std, min_inter, max_inter
 
         except FileNotFoundError:
-            raise FileNotFoundError(f"File {input_file} at the relative path not found!")
+            raise FileNotFoundError(f"File '{input_file}' at the relative path not found!")
         except ValueError:
             raise ValueError(f"FILE CORRUPTED: cannot convert data to float!")
 
