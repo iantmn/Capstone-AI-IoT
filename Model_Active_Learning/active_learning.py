@@ -9,10 +9,12 @@ from collections.abc import Sequence
 import pickle
 import random
 
-random.seed(42)
+from Labeling.labeling import Labeling
+
 
 class Active_learning():
     def __init__(self, data_file: str, set_of_labels: Sequence):
+        random.seed(42)
         # Get the data and store in datapd
         self.data_file = data_file
         self.datapd = self.get_sensor_data(data_file)
