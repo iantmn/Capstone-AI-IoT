@@ -34,7 +34,7 @@ do_knn = False
 do_svc = False
 
 # random forest
-do_rf = True
+do_rf = False
 plot_rf = False
 plot_rf_tree = False
 
@@ -45,8 +45,8 @@ do_gd = False
 do_gnb = False
 
 # clustering
-do_kmeans = True
-do_kmeans_plot = True
+do_kmeans = False
+do_kmeans_plot = False
 
 # gridsearch
 do_gridsearch_svc = False
@@ -57,7 +57,7 @@ do_randomsearch_svc = False
 do_randomsearch_rf = False
 
 # feature importance
-do_feature_importance = False
+do_feature_importance = True
 
 # ------ Data import ------ #
 # x = []
@@ -397,7 +397,7 @@ if do_randomsearch_rf:
     
 if do_feature_importance:
     print("calculating feature importance...")
-    imp = computeFeatureImportance(x_train, y_train, n_repeats=50)
-    total = imp["feature_importance"].sum()
-    imp["feature_importance"] = imp["feature_importance"] / total
+    imp = computeFeatureImportance(x_train, y_train, n_repeats=50, plotting=True)
+    # total = imp["feature_importance"].sum()
+    # imp["feature_importance"] = imp["feature_importance"] / total
     print(imp)
