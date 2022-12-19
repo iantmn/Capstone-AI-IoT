@@ -26,26 +26,24 @@ np.random.seed(42)
 
 # ------ Settings ------ #
 
-n_clusters = 4
-train_size = 0.8
+n_clusters = 3
 
 # supervised learning
 do_knn = False
 do_svc = False
 
 # random forest
-do_rf = False
+do_rf = True
 plot_rf = False
 plot_rf_tree = False
+plot_trees = True
 
-# other models
 do_dt = False
 do_bagged_class = False
 do_gd = False
 do_gnb = False
 
 # clustering
-do_kmeans = False
 do_kmeans_plot = False
 
 # gridsearch
@@ -70,12 +68,11 @@ do_feature_importance = True
 print("Importing data...")
 x = pd.read_csv(r'Data Gathering and Preprocessing/features_Walking_scaled.csv')
 print("Data imported")
-print(f"Shape of data: {x.shape}")
 
 # ------ train, test split ------ #
 
-print("shuffling data and splitting data into train and test...")
-train, test = train_test_split(x, train_size=train_size, shuffle=True)
+print("Splitting data into train and test...")
+train, test = train_test_split(x, train_size=0.8)
 
 # ------ x, y split ------ #
 
@@ -92,114 +89,90 @@ y_test = le.transform(test["label"])
 x_test = test.copy()
 x_test = x_test.drop(["label", "time", "ID"], axis=1)
 
-if do_kmeans:
-    print("starting kmeans...")
-    # ------ PCA ------ #
+# ------ PCA ------ #
 
-    print("Using PCA...")
-    pca = PCA(2)
-    df = pca.fit_transform(x_train)
-    df_test = pca.fit_transform(x_test)
+print("Using PCA...")
+pca = PCA(2)
+df = pca.fit_transform(x_train)
+df_test = pca.fit_transform(x_test)
+# df = pd.DataFrame(df)
+# df_test = pd.DataFrame(df_test)
+# print(df)
+
+# ------ Training KMeans ------ #
+
+print("Training KMeans...")
+model = KMeans(n_clusters=n_clusters)
+model.fit(x_train)
+label = model.labels_
+# print(label)
+
+pred_y = model.predict(x_test)
+print(f"KMeans accuracy: {accuracy_score(y_test, pred_y)}")
+
+model = KMeans(n_clusters=n_clusters)
+model.fit(df)
+label = model.labels_
+
+# ------ centroid ------ #
+
+print("Calculating centroids...")
+centroids = model.cluster_centers_
+u_labels = np.unique(label)
+
+pred = model.predict(df_test)
+
+if do_kmeans_plot:
+    # ------ plot ------ #
+    # for i, data in enumerate(x):
+    #     print(f"{data[0]=}, {data[1]=}, {label[i]=}")
+    #     plt.scatter(data[0], data[1], label=label[i])
+
+    print("Plotting model and test data...")
     
-    x_train_pca = np.array(df)
-    x_test_pca = np.array(df_test)
+    fig, axs = plt.subplots(2, 2)
 
-    # ------ Training KMeans ------ #
+    axs[0, 0].title.set_text('Model')
+    axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
+    axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+        
+    # ------ prediction test data ------ #
 
-    print("Training KMeans...")
-    model = KMeans(n_clusters=n_clusters)
-    model.fit(x_train)
-    label = model.labels_
-    # print(label)
+    # Make predictions on the test data
 
-    pred_y = model.predict(x_test)
-    print(f"KMeans accuracy: {accuracy_score(y_test, pred_y)}")
+    axs[0, 1].title.set_text('new data points')
+    axs[0, 1].scatter(df_test[:, :1], df_test[:, 1:], c='red')
+    axs[0, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
 
-    model = KMeans(n_clusters=n_clusters)
-    model.fit(df)
-    label = model.labels_
+    # create second plot which show new points whichout prediction
+    axs[1, 0].title.set_text('New data on model')
+    axs[1, 0].scatter(df[:, :1], df[:, 1:], c=label)
+    axs[1, 0].scatter(df_test[:, :1], df_test[:, 1:], c='red')
+    axs[1, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
 
-    # ------ centroid ------ #
+    # create third plot which show the predictions of the new points
+    axs[1, 1].title.set_text('result')
+    axs[1, 1].scatter(df[:, :1], df[:, 1:], c=label)
+    axs[1, 1].scatter(df_test[:, :1], df_test[:, 1:], c=pred)
+    axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+    plt.legend()
+    plt.show()
 
-    print("Calculating centroids...")
-    centroids = model.cluster_centers_
-    u_labels = np.unique(label)
+    print("plotting model vs actual...")
+    fig, axs = plt.subplots(2)
+    axs[0].title.set_text('model result')
+    axs[0].scatter(df[:, :1], df[:, 1:], c=label)
+    axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
     
-    cdict = {0: 'red', 1: 'blue', 2: 'green', 3: 'yellow', 4: 'brown', 5: 'purple', 6: 'orange', 7: 'pink'}
-    ldict = {}
-    for i in range(len(u_labels)):
-        ldict[i] = le.classes_[i]
-
-    pred = model.predict(df_test)
-
-    if do_kmeans_plot:
-        # ------ plot ------ #
-        # for i, data in enumerate(x):
-        #     print(f"{data[0]=}, {data[1]=}, {label[i]=}")
-        #     plt.scatter(data[0], data[1], label=label[i])
-
-        print("Plotting model and test data...")
-        
-        fig, axs = plt.subplots(2, 2)
-
-        axs[0, 0].title.set_text('Model')
-        for l in u_labels:
-            ii = np.where(label == l)
-            axs[0, 0].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
-        # axs[0, 0].scatter(df[:, 0], df[:, 1], c=label)
-
-        axs[0, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-        axs[0, 0].legend()
-        
-        # ------ prediction test data ------ #
-        # Make predictions on the test data
-
-        axs[0, 1].title.set_text('new data points')
-        axs[0, 1].scatter(df_test[:, :1], df_test[:, 1:], c='grey')
-        axs[0, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-
-        # create second plot which show new points whichout prediction
-        axs[1, 0].title.set_text('New data on model')
-        for l in u_labels:
-            ii = np.where(label == l)
-            axs[1, 0].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
-        axs[1, 0].scatter(df_test[:, :1], df_test[:, 1:], c='grey')
-        axs[1, 0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-        axs[1, 0].legend()
-
-        # create third plot which show the predictions of the new points
-        axs[1, 1].title.set_text('result')
-        for l in u_labels:
-            ii = np.where(label == l)
-            axs[1, 1].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
-        for l in u_labels:
-            ii = np.where(pred == l)
-            axs[1, 1].scatter(x_test_pca[ii, 0], x_test_pca[ii, 1], c=cdict[l])
-        axs[1, 1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-        plt.legend()
-        plt.show()
-
-        print("plotting model vs actual...")
-        fig, axs = plt.subplots(2)
-        axs[0].title.set_text('model result')
-        for l in u_labels:
-            ii = np.where(label == l)
-            axs[0].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
-        axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-        axs[0].legend()
-        
-        axs[1].title.set_text('Actual result')
-        for l in u_labels:
-            ii = np.where(y_train == l)
-            axs[1].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
-        axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-        axs[1].legend()
-        plt.show()
+    axs[1].title.set_text('Actual result')
+    axs[1].scatter(df[:, :1], df[:, 1:], c=y_train)
+    axs[1].legend()
+    axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
+    plt.show()
 
 # ------ knn ------ #
 
 if do_knn:
-    print("Training KNN model...")
     knn = KNN(n_neighbors=3)
     knn.fit(x_train, y_train)
 
@@ -214,7 +187,6 @@ if do_knn:
 # ------ svc ------ #
 
 if do_svc:
-    print("Training SVC model...")
     svc = SVC()
     svc.fit(x_train, y_train)
 
@@ -229,7 +201,6 @@ if do_svc:
 # ------ random forest ------ #
 
 if do_rf:
-    print("Training Random Forest model...")
     rf = RF()
     rf.fit(x_train, y_train)
 
@@ -240,9 +211,7 @@ if do_rf:
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
     print(f"rf: {accuracy_train=}, {accuracy_test=}")
-    print(f"rf: {rf.score(x_test, y_test)=}")
     if plot_rf:
-        print("Plotting RF model vs actual...")
         fig, axs = plt.subplots(2, 2)
         axs[0, 0].title.set_text('kmeans model result')
         axs[0, 0].scatter(df[:, :1], df[:, 1:], c=label)
@@ -264,7 +233,6 @@ if do_rf:
         plt.show()
 
     if plot_rf_tree:
-        print("Plotting individual RF tree...")
         estimator = rf.estimators_[5]
         
         fig = plt.figure(figsize=(15, 10))
@@ -272,72 +240,57 @@ if do_rf:
         plt.show()
 
     if plot_trees:
-        print(np.shape(y_test))
-        print(y_test)
-        class_A_corr = 0
-        class_B_corr = 0
-        class_C_corr = 0
-        class_A_incorr = 0 
-        class_B_incorr = 0
-        class_C_incorr = 0
-        for tree in rf.estimators_:
-            tree.fit(x_train, y_train)
-            test_pred = tree.predict(x_test)
-            print(test_pred)
-            print(y_test)
-            print(len(test_pred))
-            print(len(y_test))
-            for pred in test_pred:
-                for actual in y_test:
-                    if pred == 0 and actual == 0:
-                        class_A_corr += 1
-                    elif pred == 1 and actual == 1:
-                        class_B_corr += 1
-                    elif pred == 2 and actual == 2:
-                        class_C_corr += 1
-                    elif pred == 0 and actual > 0:
-                        class_A_incorr += 1
-                    elif pred == 1 and actual != 1:
-                        class_B_incorr += 1
-                    elif pred == 2 and actual != 2:
-                        class_C_incorr += 1
-            acc_score = accuracy_score(y_test, test_pred)
-            print(acc_score)
+        var_pattern_corr = 'class_corr_{}'
+        var_pattern_incorr = 'class_incorr_{}'
+        start_val = 0
+        corr = []
+        incorr = []
+        var_pattern_acc = 'acc_class_{}'
+        acc = []
 
-        lst_corr = [class_A_corr, class_B_corr, class_C_corr]
-        print(lst_corr)
-        lst_incorr = [class_A_incorr, class_B_incorr, class_C_incorr]
-        print(lst_incorr)
-        bins = ['Class A', 'Class B', 'Class C']
+        for i in range(0, len(le.classes_)):
+            globals()[var_pattern_corr.format(i)] = start_val
+            globals()[var_pattern_incorr.format(i)] = start_val
+            corr.append(globals()[var_pattern_corr.format(i)])
+            incorr.append(globals()[var_pattern_incorr.format(i)])
+        
+        # Check accuracy per class
+        for tree in rf.estimators_:
+            test_pred = tree.predict(x_test)
+            for i in range(len(y_test)):
+                for x in range(0, len(le.classes_)):
+                    if test_pred[i] == x and y_test[i] == x:
+                        corr[x] += 1
+                    elif test_pred[i] == x and y_test[i] != x:
+                        incorr[x] += 1
+            print(test_pred)
+
+        bins = le.classes_
         y_pos = np.arange(len(bins))    
-        plt.bar(y_pos - 0.2, lst_corr, 0.4, label='Correct')
-        plt.bar(y_pos + 0.2, lst_incorr, 0.4, label='Incorrect')
+        plt.bar(y_pos - 0.2, corr, 0.4, label='Correctly labeled')
+        plt.bar(y_pos + 0.2, incorr, 0.4, label='Incorrectly labeled')
         plt.xticks(y_pos, bins)
-        plt.xlabel("Distribution")
-        plt.ylabel("Values")
+        plt.xlabel("Distribution of classification")
+        plt.ylabel("Number of classifications")
         plt.legend()
         plt.show()
-        # X = ['Group A','Group B','Group C']
-        # Ygirls = [class_A_corr, class_B_corr, class_C_corr]
-        # Zboys = [class_A_incorr, class_B_incorr, class_C_incorr]
         
-        # X_axis = np.arange(len(X))
-        
-        # plt.bar(X_axis, Ygirls, 0.4, label = 'Girls')
-        # plt.bar(X_axis, Zboys, 0.4, label = 'Boys')
-        
-        # plt.xticks(X_axis, X)
-        # plt.xlabel("Groups")
-        # plt.ylabel("Number of Students")
-        # plt.title("Number of Students in each group")
-        # plt.legend()
-        # plt.show()
-
+        for x in range(0, len(corr)):
+            if corr[x] != 0 and incorr[x] != 0:
+                globals()[var_pattern_acc.format(x)] = corr[x] / (corr[x] + incorr[x])
+            else:
+                globals()[var_pattern_acc.format(x)] = 0
+            acc.append(globals()[var_pattern_acc.format(x)])
+        print(corr)    
+        print(incorr)
+        count = 0
+        for item in acc:
+            print("The accuracy for class named {} is: ".format(le.classes_[count]) + str(item))
+            count += 1
     
 # ------ decision tree ------ #
 
 if do_dt:
-    print("training decision tree...")
     dt = DecisionTreeClassifier()
     dt.fit(x_train, y_train)
 
@@ -356,7 +309,6 @@ if do_dt:
 # ------ bagged classifier ------ #
 
 if do_bagged_class:
-    print("training bagged classifier...")
     chosen = SVC()
     num_models = 100
     model = BaggingClassifier(base_estimator=chosen, n_estimators=num_models, random_state=42)
@@ -374,7 +326,6 @@ if do_bagged_class:
 # ------ gradient descent ------ #
 
 if do_gd:
-    print("training SGD classifier...")
     gd = SGDClassifier()
     gd.fit(x_train, y_train)
 
@@ -389,7 +340,6 @@ if do_gd:
 # ------ guassian naive Bayes ------ #
 
 if do_gnb:
-    print("training gaussian naive bayes...")
     nb = GaussianNB()
     nb.fit(x_train, y_train)
 
@@ -405,7 +355,6 @@ if do_gnb:
 # ------ gridsearch svc ------ #
     
 if do_gridsearch_svc:
-    print("training gridsearch svc...")
     parameters = {'kernel':('linear', 'rbf'), 'C':[0.001, 0.01, 0.1, 1, 10, 100]}
     model = SVC()
     clf = GSCV(model, parameters, verbose=3)
@@ -419,7 +368,6 @@ if do_gridsearch_svc:
 # ------ gridsearch rf ------ #
 
 if do_gridsearch_rf:
-    print("training gridsearch rf...")
     parameters = {'n_estimators':[1, 10, 100, 1000], 'max_depth':[None], 'min_samples_split':[2, 4, 8]}
     model = RF()
     clf = GSCV(model, parameters, verbose=3)
@@ -432,7 +380,6 @@ if do_gridsearch_rf:
 # ------ randomsearch svc ------ #
 
 if do_randomsearch_svc:
-    print("training randomsearch svc...")
     parameters = {'kernel':('linear', 'rbf'), 'C':[0.001, 0.01, 0.1, 1, 10, 100]}
     model = SVC()
     clf = RSCV(model, parameters, verbose=3)
@@ -445,7 +392,6 @@ if do_randomsearch_svc:
 # ------ randomsearch rf ------ #    
 
 if do_randomsearch_rf:
-    print("training randomsearch rf...")
     parameters = {'n_estimators':[1, 10, 100, 1000], 'max_depth':[None], 'min_samples_split':[2, 4, 8]}
     model = RF()
     clf = RSCV(model, parameters, verbose=3)
@@ -459,7 +405,7 @@ if do_randomsearch_rf:
     
 if do_feature_importance:
     print("calculating feature importance...")
-    imp = computeFeatureImportance(x_train, y_train, n_repeats=50, plotting=True)
-    # total = imp["feature_importance"].sum()
-    # imp["feature_importance"] = imp["feature_importance"] / total
+    imp = computeFeatureImportance(x_train, y_train)
+    total = imp["feature_importance"].sum()
+    imp["feature_importance"] = imp["feature_importance"] / total
     print(imp)
