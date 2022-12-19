@@ -5,11 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from sklearn.metrics.pairwise import euclidean_distances
 from collections.abc import Sequence
 import pickle
 import random
-import time
 
 random.seed(42)
 
@@ -35,21 +33,11 @@ class Active_learning():
         # Remove the labels from the X_pool set
         self.X_pool['label'] = ['']*self.X_pool.shape[0]
 
-        # Train the model with active learning
-        self.training()
-
         with open('model.txt', 'wb') as f:
             pickle.dump(self.model, f)
 
         # print(self.testing())
 
-        # Plot the gini index, the margin and the test accuracy on every iteration
-        plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
-        plt.xlabel('Iterations [n]')
-        plt.ylabel('Magnitude')
-        plt.title('Active learning')
-        plt.legend()
-        plt.show()
         
     @property
     def unlabeled_ids(self):
@@ -73,20 +61,22 @@ class Active_learning():
         # return to X_pool, X_test, y_pool, y_test
         return train_test_split(self.datapd, self.datapd['label'], test_size=test_size, random_state=random_state)
 
-    def training(self):
+    def training(self, maximum_iterations, random_points: int = 3, cluster_points: int = 1):
         """the process of training the datapoints, first set starting points, then iterate untill you have a certainty""" 
         # Set randomized starting points       
-        self.set_starting_points(3)
+        self.set_starting_points(random_points)
 
         # Set the predicted and und predicted sets into new arrays, these will be used further on
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
 
-        # self.clustered_starting_points(1)
+        self.clustered_starting_points(cluster_points)
         # pd.to_csv('hello?', self.datapd)
         
         # Set the most ambiguous points iteratively
-        self.iterate(150)
+        self.iterate(maximum_iterations)
+        # Write to csv file
+        self.write_to_file()
 
     def set_starting_points(self, n_samples):
         """Generates training set by selecting random starting points, labeling them, and checking if there's an instance of every activity"""
@@ -149,7 +139,7 @@ class Active_learning():
         predictions = np.array(kmeans.predict(self.unpreds[:,3:]))
         X = self.unpreds.copy()
         X[:, 1] = predictions
-        for label in range(len(self.set_of_labels)):
+        for label in range(n_clusters):
             # Select samples with label
             x = X[np.where(X[:,1]==label)[0], :]
             for _ in range(n_samples): # For now
@@ -158,7 +148,7 @@ class Active_learning():
                 # Add certain samples
                 cert_indices.append(x[np.argmin(total_dists), 0])
                 # print(cert_indices)
-                x = np.delete(x, x[np.argmin(total_dists), 0])
+                x = np.delete(x, np.argmin(total_dists), 0)
         for e in cert_indices:
             # got_labeled = self.identify(self.datapd.iloc[min_indices[i]]['time'])
             got_labeled = self.identify(e)  # for testing
@@ -184,7 +174,7 @@ class Active_learning():
             new_index, margin = self.set_ambiguous_point()
             # Iterate for a decided number of points or until you have a certain margin or gini
             # TODO: Investigate margin or gini at which you have a good accuracy
-            if iter_num >= max_iter:
+            if iter_num >= max_iter or margin > 0.15:
                 break
 
             # TODO: Sophie dit is jou idee idk wat je hiermee van plan was
@@ -199,7 +189,7 @@ class Active_learning():
         # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
         # Get what label this ID is supposed to get
-        new_label = self.identify(get_id_to_label, les_probs=None)  # just for testing
+        new_label = self.identify(get_id_to_label, les_probs=None)  # just for testing, add les_probs as arg to les_probs if you want these to be printed
 
         # Extract the row from the unpredicted array
         t = self.unpreds[self.unpreds[:, 0] == get_id_to_label, :]
@@ -230,7 +220,7 @@ class Active_learning():
         else:
             if id < 543:
                 return 'stairs_up'
-            elif id < 1176:
+            elif id < 1177:
                 return 'stairs_down'
             elif id < 1632:
                 return 'running'
@@ -274,13 +264,64 @@ class Active_learning():
             # Add the accuracy, this is only for a nice plot and can be deleted afterwards.
             self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
             # Oeh fun result get better with more samples Oeh!
-            # print(self.gini_margin_acc[-1])
+            print(self.gini_margin_acc[-1])
             return lowest_margin_sample_id, lowest_margin, les_probs
         # Exception mostly for testing idk if it will every be handydany again
         except ValueError:
             # self.X_pool.to_csv('xpool doet raar.csv')
             # print(preds)
             raise ValueError(self.preds)
+
+    @staticmethod
+    def gini_impurity_index(list_of_p):
+        # Return the gini: 1 - sum(p^2)
+        return 1-sum((item*item for item in list_of_p))
+
+    def write_to_file(self):
+        self.unpreds[:, 1] = self.model.predict(self.unpreds[:, 3:])        
+        self.preds = np.append(self.preds, self.unpreds, axis=0)
+        self.preds = self.preds[self.preds[:, 0].argsort()]
+        # print(self.preds[:5, :])
+        names = np.array([self.datapd.columns])
+        np.savetxt(f"{self.data_file}_AL_predictionss.csv", np.append(names, self.preds, axis=0), delimiter=",", fmt='%s')
+
+    def testing(self, n_to_check=None):
+        """Checks for overfitting based on randomized sampling. To avoid having to make them label the entire test set, we ask 
+        the designer to confirm n predicted test labels"""
+        test_ids = []
+        if n_to_check is None or n_to_check > len(self.X_test):
+            n_to_check = len(self.X_test)
+        while len(test_ids) != n_to_check:
+            while True:
+                random_id = random.randint(0, self.datapd.shape[0])
+                if random_id in self.X_test[:, 0] and random_id not in test_ids:
+                    test_ids.append(random_id)
+                    break
+        # print(self.datapd.iloc[test_ids, 3:])
+        # print(np.where(self.X_test[:, 0] in test_ids))
+        # print(f'shape: = {self.X_test[np.where(self.X_test[:, 0] == test_ids[0]), 3:].shape}')
+        # random_samples = self.X_test[np.where(self.X_test[:, 0] == test_ids[0]), 3:]
+        # print(random_samples, random_samples.shape)
+        # for id in test_ids[1:]:
+        #     random_samples = np.append(random_samples, self.X_test[np.where(self.X_test[:, 0] == id), 3:], axis=0)
+        # print(random_samples)
+        # random_samples = self.X_test[np.where(self.X_test[:, 0] in test_ids), 3:]
+        predictions = self.model.predict(np.array(self.datapd.iloc[test_ids, 3:]))
+        error_count = 0
+        for i in range(len(test_ids)):
+            if predictions[i] != self.identify(test_ids[i]):
+            # if predictions[i] != self.identify(self.datapd.iloc[random_id]['time'])
+                error_count += 1
+        return error_count
+
+    def plotting(self):
+        # Plot the gini index, the margin and the test accuracy on every iteration
+        plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
+        plt.xlabel('Iterations [n]')
+        plt.ylabel('Magnitude')
+        plt.title('Active learning')
+        plt.legend()
+        plt.show()
 
     # def iteration_0(self):
     #     X_train = X_pool.iloc[self.labeled_ids]
@@ -326,11 +367,6 @@ class Active_learning():
     #     plt.ylabel(ylabel)
     #     plt.title(title)
     #     plt.show()
-
-    @staticmethod
-    def gini_impurity_index(list_of_p):
-        # Return the gini: 1 - sum(p^2)
-        return 1-sum((item*item for item in list_of_p))
         
     # def label_test_set(self):
     #     pass
@@ -350,34 +386,4 @@ class Active_learning():
         # if done == "N":
             # ask_activity = input() 
         # return self.activities
-
-    def testing(self):
-        """Checks for overfitting based on randomized sampling. To avoid having to make them label the entire test set, we ask 
-        the designer to confirm n predicted test labels"""
-        test_ids = []
-        n_to_check = 30
-        while len(test_ids) != n_to_check:
-            while True:
-                random_id = random.randint(0, self.datapd.shape[0])
-                if random_id in self.X_test[:, 0] and random_id not in test_ids:
-                    test_ids.append(random_id)
-                    break
-        # random_samples = np.zeros(n_to_check, self.number_of_features)
-        # random_samples = 
-        print(self.datapd.iloc[test_ids, 3:])
-        # print(np.where(self.X_test[:, 0] in test_ids))
-        # print(f'shape: = {self.X_test[np.where(self.X_test[:, 0] == test_ids[0]), 3:].shape}')
-        # random_samples = self.X_test[np.where(self.X_test[:, 0] == test_ids[0]), 3:]
-        # print(random_samples, random_samples.shape)
-        # for id in test_ids[1:]:
-        #     random_samples = np.append(random_samples, self.X_test[np.where(self.X_test[:, 0] == id), 3:], axis=0)
-        # print(random_samples)
-        # random_samples = self.X_test[np.where(self.X_test[:, 0] in test_ids), 3:]
-        predictions = self.model.predict(self.datapd.iloc[test_ids, 3:])
-        error_count = 0
-        for i in range(len(test_ids)):
-            if predictions[i] != self.identify(test_ids[i]):
-            # if predictions[i] != self.identify(self.datapd.iloc[random_id]['time'])
-                error_count += 1
-        return error_count
 

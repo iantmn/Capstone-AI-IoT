@@ -4,7 +4,9 @@ import pandas as pd
 def main():
     labels = set(('stairs_up', 'stairs_down', 'walking', 'running'))
     al = Active_learning(r'running_data/features_Walking_scaled.csv', labels)
-    # pd.display(al.datapd)
+    al.training(150)
+    print(f'number of errors: {al.testing(30)}')
+    al.plotting()
 
 if __name__ == '__main__':
     main()
