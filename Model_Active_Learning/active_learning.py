@@ -9,11 +9,14 @@ from collections.abc import Sequence
 import pickle
 import random
 
-from Labeling.labeling import Labeling
+import sys
+sys.path.append('../')
+
+from Labeling.Videolabeler import VideoLabeler
 
 
 class Active_learning():
-    def __init__(self, data_file: str, set_of_labels: Sequence):
+    def __init__(self, data_file: str, set_of_labels: Sequence, window_size: float = 2):
         random.seed(42)
         # Get the data and store in datapd
         self.data_file = data_file
@@ -28,6 +31,9 @@ class Active_learning():
         self.labeled_ids = []
         # This is for measuring the functionality/efficiency of the Active learning
         self.gini_margin_acc: list[list[float]] = []
+
+        self.vid = VideoLabeler(set_of_labels)
+        self.window_size = window_size
 
         # X_pool is the dataset that we use for building the model. X_test is to test the model
         self.X_pool, self.X_test, self.y_pool, self.y_test = self.split_pool_test()
@@ -191,7 +197,7 @@ class Active_learning():
         # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
         # Get what label this ID is supposed to get
-        new_label = self.identify(get_id_to_label, les_probs=None)  # just for testing, add les_probs as arg to les_probs if you want these to be printed
+        new_label = self.identify(get_id_to_label, les_probs=les_probs)  # just for testing, add les_probs as arg to les_probs if you want these to be printed
 
         # Extract the row from the unpredicted array
         t = self.unpreds[self.unpreds[:, 0] == get_id_to_label, :]
@@ -210,24 +216,36 @@ class Active_learning():
         """This function will call the the identification system from Gijs en Timo, for now it has been automated"""
         # time.sleep(0.2)
         # print(id)
-        if les_probs is not None:
-            print(les_probs, les_probs.index(max(les_probs)))
-        if 'old' in self.data_file or 'time_features' in self.data_file:
-            if id < 91:
-                return 'stairs_up'
-            elif id < 182:
-                return 'stairs_down'
-            else:
-                return 'walking' 
+        # if les_probs is not None:
+        #     print(les_probs, les_probs.index(max(les_probs)))
+        # if 'old' in self.data_file or 'time_features' in self.data_file:
+        #     if id < 91:
+        #         return 'stairs_up'
+        #     elif id < 182:
+        #         return 'stairs_down'
+        #     else:
+        #         return 'walking' 
+        # else:
+        #     if id < 543:
+        #         return 'stairs_up'
+        #     elif id < 1177:
+        #         return 'stairs_down'
+        #     elif id < 1632:
+        #         return 'running'
+        #     else:
+        #         return 'walking'
+        timestamp = self.datapd.iloc[id, 2]
+        with open(r'processed_data_files.txt') as f:
+            for line in f: 
+                splited = line.strip().split(',')
+                if int(splited[1]) <= id <= int(splited[2]):
+                    video_file = splited[3]
+                    break
+        
+        if les_probs is None:
+            return self.vid.labeling(video_file, timestamp, self.window_size)
         else:
-            if id < 543:
-                return 'stairs_up'
-            elif id < 1177:
-                return 'stairs_down'
-            elif id < 1632:
-                return 'running'
-            else:
-                return 'walking' 
+            return self.vid.labeling(video_file, timestamp, self.window_size, les_probs)
         # return input(f'FOR TESTING: enter the selected label, id = {id}\n')
 
     def find_most_ambiguous_id(self):
@@ -264,9 +282,9 @@ class Active_learning():
             les_probs = self.model.predict_proba(self.unpreds[np.where(self.unpreds[:, 0] == lowest_margin_sample_id)[0], 3:]).tolist()[0]
 
             # Add the accuracy, this is only for a nice plot and can be deleted afterwards.
-            self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
+            # self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
             # Oeh fun result get better with more samples Oeh!
-            print(self.gini_margin_acc[-1])
+            # print(self.gini_margin_acc[-1])
             return lowest_margin_sample_id, lowest_margin, les_probs
         # Exception mostly for testing idk if it will every be handydany again
         except ValueError:

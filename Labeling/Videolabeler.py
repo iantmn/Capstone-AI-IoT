@@ -7,7 +7,7 @@ class VideoLabeler():
     def __init__(self, labels: Collection[str]) -> None:
         self.labels = list(labels)
 
-    def labeling(self, video_file: str, timestamp: float, window_size: float) -> str:
+    def labeling(self, video_file: str, timestamp: float, window_size: float, probs: Collection = None) -> str:
         """Function to label a window in a given video at a given timestamp
 
         Args:
@@ -26,6 +26,8 @@ class VideoLabeler():
         self.display_html(video_file, timestamp, window_size)
         # Making sure that the cell is empty by waiting some time
         time.sleep(0.3)
+        if not probs is None:
+            print(probs)
         
         # Selecting the label:
         while True:
@@ -90,6 +92,7 @@ class VideoLabeler():
             timestamp (float): starting point of the window, seen from the start of the video in seconds.
             window_size (float): length of the window in seconds.
         """
+        timestamp += 2.5
         print(timestamp, window_size)
         # Function to display HTML code  
         display(HTML(f'''
