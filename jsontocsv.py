@@ -2,11 +2,8 @@ import json
 import pandas as pd
 from datetime import datetime
 
-import js2py
 
-
-
-with open('output_path_test2.json', encoding='utf-8') as inputfile:
+with open('output_path_test1.json', encoding='utf-8') as inputfile:
     df = json.load(inputfile)
     df = df["1"]["streams"]["ACCL"]["samples"]
 
@@ -17,7 +14,7 @@ with open('output_path_test2.json', encoding='utf-8') as inputfile:
     time0 = time0[11:-1]
 
     time0 = datetime.strptime(time0, '%H:%M:%S.%f')
-    lst[0].append(time0-time0)
+    lst[0].append((time0-time0).total_seconds())
     for j in range(len(dct["value"])):
         lst[0].append(dct["value"][j])
 
@@ -27,11 +24,11 @@ with open('output_path_test2.json', encoding='utf-8') as inputfile:
         time = dct["date"]
         time = time[11:-1]
         time = datetime.strptime(time, '%H:%M:%S.%f')
-        lst[i].append(time-time0)
+        lst[i].append((time-time0).total_seconds())
         for j in range(len(dct["value"])):
             lst[i].append(dct["value"][j])
 
-with open('csvfile_test2.csv', 'w') as f:
+with open('csvfile_test1.csv', 'w') as f:
     for i in range(len(lst)):
         for j in range(len(lst[i])):
             f.write(f"{lst[i][j]}")
