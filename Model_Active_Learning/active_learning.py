@@ -16,7 +16,7 @@ from Labeling.Videolabeler import VideoLabeler
 
 
 class Active_learning():
-    def __init__(self, data_file: str, set_of_labels: Sequence, window_size: float = 2):
+    def __init__(self, data_file: str, labels: Sequence, window_size: float = 2):
         random.seed(42)
         # Get the data and store in datapd
         self.data_file = data_file
@@ -26,13 +26,13 @@ class Active_learning():
         # Determine model in seperate function
         self.model = self.determine_model()
         # Argument is the set of labels that the user predicts
-        self.set_of_labels = set_of_labels
+        self.labels = labels
         # A list of the ID's that we have labeled already
         self.labeled_ids = []
         # This is for measuring the functionality/efficiency of the Active learning
         self.gini_margin_acc: list[list[float]] = []
 
-        self.vid = VideoLabeler(set_of_labels)
+        self.vid = VideoLabeler(labels)
         self.window_size = window_size
 
         # X_pool is the dataset that we use for building the model. X_test is to test the model
@@ -62,7 +62,7 @@ class Active_learning():
         """read and return the datafile from the given path"""
         return pd.read_csv(data_file)
 
-    def split_pool_test(self):
+    def split_pool_test(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         # Parameters for the split
         random_state = 42
         test_size = 0.2
@@ -75,6 +75,7 @@ class Active_learning():
         self.set_starting_points(random_points)
 
         # Set the predicted and und predicted sets into new arrays, these will be used further on
+        # print(self.X_pool.loc[self.X_pool['label'] != ''])
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
 
@@ -84,31 +85,34 @@ class Active_learning():
         # Set the most ambiguous points iteratively
         self.iterate(maximum_iterations)
         # Write to csv file
-        self.write_to_file()
+        # self.write_to_file()
 
     def set_starting_points(self, n_samples):
         """Generates training set by selecting random starting points, labeling them, and checking if there's an instance of every activity"""
         # Keep track of what activities we have labeled already
         seen_activities = [] # list of strings
         # Amount of datapoints that we randomly sample
-        range_var = n_samples * len(self.set_of_labels)
+        range_var = n_samples * len(self.labels)
+        self.X_pool.to_csv('test.csv')
         # Generate random points
         for i in range(range_var):
             # Pick a random point from X_pool
             while True:
                 # Set a random id that is in the X_pool and has not yet been labeled
-                random_id = random.randint(0, self.X_pool.shape[0])
+                random_id = random.randint(0, self.datapd.shape[0])
                 if random_id not in self.labeled_ids and random_id in self.X_pool['ID']:
                     break
             # Give the timestamp to the identification module but for testing I have automated it
             # got_labeled = self.identify(self.datapd.iloc[random_id]['time'])
             got_labeled = self.identify(random_id)  # for testing
             if got_labeled == 'x':
-                self.datapd.drop(np.where(self.datapd.iloc[:, 0] == id)[0], 0)
+                print(np.where(self.datapd.iloc[:, 0] == random_id))
+                self.datapd.drop(random_id, 0)
+                self.X_pool.drop(random_id, 0)
             # If this label was not accounted for we add it to the set of labels
             else:
-                if got_labeled not in self.set_of_labels:
-                    self.set_of_labels.add(got_labeled)
+                if got_labeled not in self.labels:
+                    self.labels.append(got_labeled)
                 seen_activities.append(got_labeled)
                 # Add the ID to the list
                 self.labeled_ids.append(random_id)
@@ -118,8 +122,8 @@ class Active_learning():
 
         # keep adding points until every activity is in the training set
         # We added samples as the centre of each cluster so we don't really need this bit anymore
-        # while not len(set(seen_activities)) == len(self.set_of_labels):
-        #     # print(len(set(seen_activities)), len(self.set_of_labels))
+        # while not len(set(seen_activities)) == len(self.labels):
+        #     # print(len(set(seen_activities)), len(self.labels))
         #     while True:
         #         # We again check if this label is in the pool and if it has not yet been classified.
         #         random_id = random.randint(0, self.X_pool.shape[0])
@@ -129,24 +133,30 @@ class Active_learning():
         #     self.labeled_ids.append(random_id)
         #     # got_labeled = self.identify(self.datapd.iloc[random_id]['time'])
         #     got_labeled = self.identify(random_id)
-        #     if got_labeled not in self.set_of_labels:
-        #         self.set_of_labels.add(got_labeled)
+        #     if got_labeled not in self.labels:
+        #         self.labels.append(got_labeled)
         #     seen_activities.append(got_labeled)
 
         # We have found a sample of all the labels that we expected
         print('second stage is done!')
         # Randomized phase is done
         # Give labels to the ID's in the pandaset
+        # print(self.X_pool.iloc[0, :])
+        # print(self.X_pool)
+        # print(self.X_pool.iloc[self.labeled_ids[0], :])
         for i in range(len(self.labeled_ids)):
-            self.X_pool.at[np.where(self.X_pool[:, 0] == self.labeled_ids[i])[0], 'label'] = seen_activities[i]
+            print(np.where(self.labeled_ids[i]), self.labeled_ids[i])
+            self.X_pool.at[self.labeled_ids[i], 'label'] = seen_activities[i]
+        self.X_pool.to_csv('test2.csv')
+        self.datapd.to_csv('test3.csv')
             
     def clustered_starting_points(self, n_samples):
         # Amount of clusters that we expect
-        n_clusters = len(self.set_of_labels)
+        n_clusters = len(self.labels)
         # Determine the meanse
         kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(self.unpreds[:,3:])
         cert_indices = []
-        # clust_centers = {label:kmeans.cluster_centers_[label] for label in range(len(self.set_of_labels))}
+        # clust_centers = {label:kmeans.cluster_centers_[label] for label in range(len(self.labels))}
         predictions = np.array(kmeans.predict(self.unpreds[:,3:]))
         X = self.unpreds.copy()
         X[:, 1] = predictions
@@ -165,7 +175,7 @@ class Active_learning():
             got_labeled = self.identify(e)  # for testing
             self.labeled_ids.append(e)
             if got_labeled == 'x':
-                self.remove_row()
+                self.remove_row(e)
             else:
                 # print(np.where(self.X_pool.iloc[:, 0] == e)[0][0])
                 line = self.X_pool.iloc[np.where(self.X_pool.iloc[:, 0] == e)[0][0], :].copy()
@@ -346,7 +356,7 @@ class Active_learning():
 
     def remove_row(self, id):
         self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == id)[0][0], 0)
-        self.datapd.drop(np.where(self.datapd.iloc[:, 0] == id)[0], 0)
+        self.datapd.drop(id, 0)
 
     def plotting(self):
         # Plot the gini index, the margin and the test accuracy on every iteration
