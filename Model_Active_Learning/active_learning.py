@@ -100,15 +100,18 @@ class Active_learning():
                 random_id = random.randint(0, self.X_pool.shape[0])
                 if random_id not in self.labeled_ids and random_id in self.X_pool['ID']:
                     break
-            # Add the ID to the list
-            self.labeled_ids.append(random_id)
             # Give the timestamp to the identification module but for testing I have automated it
             # got_labeled = self.identify(self.datapd.iloc[random_id]['time'])
             got_labeled = self.identify(random_id)  # for testing
+            if got_labeled == 'x':
+                self.datapd.drop(np.where(self.datapd.iloc[:, 0] == id)[0], 0)
             # If this label was not accounted for we add it to the set of labels
-            if got_labeled not in self.set_of_labels:
-                self.set_of_labels.add(got_labeled)
-            seen_activities.append(got_labeled)
+            else:
+                if got_labeled not in self.set_of_labels:
+                    self.set_of_labels.add(got_labeled)
+                seen_activities.append(got_labeled)
+                # Add the ID to the list
+                self.labeled_ids.append(random_id)
 
         # The determined number of random points were executed. We now set random points as long as not all predicted classes were found.
         print('first stage is done!')
@@ -161,14 +164,17 @@ class Active_learning():
             # got_labeled = self.identify(self.datapd.iloc[min_indices[i]]['time'])
             got_labeled = self.identify(e)  # for testing
             self.labeled_ids.append(e)
-            # print(np.where(self.X_pool.iloc[:, 0] == e)[0][0])
-            line = self.X_pool.iloc[np.where(self.X_pool.iloc[:, 0] == e)[0][0], :].copy()
-            # print(line)
-            line.at['label'] = got_labeled
-            line = np.array(line).reshape(1, -1)
-            # print(line.shape, self.preds.shape)
-            self.preds = np.append(self.preds, line, axis=0)
-            self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == e), 0)
+            if got_labeled == 'x':
+                self.remove_row()
+            else:
+                # print(np.where(self.X_pool.iloc[:, 0] == e)[0][0])
+                line = self.X_pool.iloc[np.where(self.X_pool.iloc[:, 0] == e)[0][0], :].copy()
+                # print(line)
+                line.at['label'] = got_labeled
+                line = np.array(line).reshape(1, -1)
+                # print(line.shape, self.preds.shape)
+                self.preds = np.append(self.preds, line, axis=0)
+                self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == e), 0)
 
 
     def iterate(self, max_iter):
@@ -198,19 +204,22 @@ class Active_learning():
         self.labeled_ids.append(get_id_to_label)
         # Get what label this ID is supposed to get
         new_label = self.identify(get_id_to_label, les_probs=les_probs)  # just for testing, add les_probs as arg to les_probs if you want these to be printed
-
-        # Extract the row from the unpredicted array
-        t = self.unpreds[self.unpreds[:, 0] == get_id_to_label, :]
-        # Label the row
-        t[0, 1] = new_label
-        # Stack it onto the predicted array
-        self.preds = np.vstack((self.preds, t))
-        # Delete it from the unpredicted array
-        self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == get_id_to_label)[0][0], 0)
-        if get_id_to_label in self.unpreds[:, 1]:
-            raise ValueError('you did an oopsie')
-        # Return the label and the margin
-        return get_id_to_label, margin
+        if new_label == 'x':
+            self.remove_row(get_id_to_label)
+            return get_id_to_label, 0
+        else:
+            # Extract the row from the unpredicted array
+            t = self.unpreds[self.unpreds[:, 0] == get_id_to_label, :]
+            # Label the row
+            t[0, 1] = new_label
+            # Stack it onto the predicted array
+            self.preds = np.vstack((self.preds, t))
+            # Delete it from the unpredicted array
+            self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == get_id_to_label)[0][0], 0)
+            if get_id_to_label in self.unpreds[:, 1]:
+                raise ValueError('you did an oopsie')
+            # Return the label and the margin
+            return get_id_to_label, margin
 
     def identify(self, id, les_probs=None):
         """This function will call the the identification system from Gijs en Timo, for now it has been automated"""
@@ -246,6 +255,7 @@ class Active_learning():
             return self.vid.labeling(video_file, timestamp, self.window_size)
         else:
             return self.vid.labeling(video_file, timestamp, self.window_size, les_probs)
+            
         # return input(f'FOR TESTING: enter the selected label, id = {id}\n')
 
     def find_most_ambiguous_id(self):
@@ -333,6 +343,10 @@ class Active_learning():
             # if predictions[i] != self.identify(self.datapd.iloc[random_id]['time'])
                 error_count += 1
         return error_count
+
+    def remove_row(self, id):
+        self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == id)[0][0], 0)
+        self.datapd.drop(np.where(self.datapd.iloc[:, 0] == id)[0], 0)
 
     def plotting(self):
         # Plot the gini index, the margin and the test accuracy on every iteration

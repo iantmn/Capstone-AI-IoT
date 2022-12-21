@@ -52,7 +52,7 @@ class VideoLabeler():
             # If the input is not in integer
             except ValueError:
                 # Check if the label exists
-                if new_label in self.labels:
+                if new_label in self.labels or new_label == 'x':
                     return new_label
                 # If the option to add a new label is chosen
                 elif new_label == 'n':
