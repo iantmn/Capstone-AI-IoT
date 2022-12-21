@@ -138,7 +138,7 @@ class Active_learning():
         # Randomized phase is done
         # Give labels to the ID's in the pandaset
         for i in range(len(self.labeled_ids)):
-            self.X_pool.at[self.labeled_ids[i], 'label'] = seen_activities[i]
+            self.X_pool.at[np.where(self.X_pool[:, 0] == self.labeled_ids[i])[0], 'label'] = seen_activities[i]
             
     def clustered_starting_points(self, n_samples):
         # Amount of clusters that we expect
