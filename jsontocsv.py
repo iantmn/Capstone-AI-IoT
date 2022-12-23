@@ -5,7 +5,7 @@ from datetime import datetime
 
 with open('output_path_test1.json', encoding='utf-8') as inputfile:
     df = json.load(inputfile)
-    df = df["1"]["streams"]["ACCL"]["samples"]
+    df = df["1"]["streams"]["GYRO"]["samples"]
 
     lst: list[list[str | float]] = []
     lst.append([])
@@ -28,7 +28,7 @@ with open('output_path_test1.json', encoding='utf-8') as inputfile:
         for j in range(len(dct["value"])):
             lst[i].append(dct["value"][j])
 
-with open('csvfile_test1.csv', 'w') as f:
+with open('csvfile_test1_gyro.csv', 'w') as f:
     for i in range(len(lst)):
         for j in range(len(lst[i])):
             f.write(f"{lst[i][j]}")
