@@ -574,7 +574,7 @@ class Preprocessing():
         sensors_amount = (data_array.shape[1])//fa
         datapoints_amount = data_array.shape[0] - 1
 
-        print(f'fa: {fa}, sensors_amount: {sensors_amount}')
+        print(f'amount of sensors: {sensors_amount}, amount of features per sensor: {fa}')
 
         if sensors_amount > 6:
             raise ValueError('You have used more than 6 sensors, we have not yet implemented ')
@@ -600,7 +600,7 @@ class Preprocessing():
                 data_array[:, i+j] = (data_array[:, i+j] - sum_feature)/std_feature
         # if there are more then 3 sensors used, we have gyroscope sensors as well.
         if sensors_amount > 3:
-            for i in range(0, fa-3):
+            for i in range(0, fa):
                 sum_feature = 0
                 # Go trough every column with the same feature of different sensors and add them
                 for j in range(3*fa, sensors_amount*fa, fa):
