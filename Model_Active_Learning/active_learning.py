@@ -323,7 +323,7 @@ class Active_learning():
         self.preds = self.preds[self.preds[:, 0].argsort()]
         # print(self.preds[:5, :])
         names = np.array([self.datapd.columns])
-        np.savetxt(f"{self.data_file}_AL_predictionss.csv", np.append(names, self.preds, axis=0), delimiter=",", fmt='%s')
+        np.savetxt(f"{self.data_file.split('.')[0]}_AL_predictionss.csv", np.append(names, self.preds, axis=0), delimiter=",", fmt='%s')
 
     def testing(self, n_to_check=None):
         """Checks for overfitting based on randomized sampling. To avoid having to make them label the entire test set, we ask 
