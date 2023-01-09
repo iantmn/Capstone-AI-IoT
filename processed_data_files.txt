@@ -1,2 +1,0 @@
-csvfile_test1.csv,0,383,notebook dingen/Walking_part_2.mp4
-csvfile_test2.csv,384,513,notebook dingen/Walking_part_1.mp4

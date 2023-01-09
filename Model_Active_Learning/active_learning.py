@@ -1,30 +1,38 @@
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.cluster import KMeans
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from collections.abc import Sequence
-import pickle
-import random
-
-import sys
-sys.path.append('../')
-
 from Labeling.Videolabeler import VideoLabeler
 
+import sys
+import pickle
+import random
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
-class Active_learning():
-    def __init__(self, data_file: str, labels: Sequence, window_size: float = 2):
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.cluster import KMeans
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+from collections.abc import Sequence
+from typing import Any
+
+sys.path.append('../')
+
+
+class ActiveLearning:
+    def __init__(self, data_file: str, activity: str, labels: list[str], window_size: float = 2):
+        self.preds = None
+        self.unpreds = None
+
         random.seed(42)
         # Get the data and store in datapd
         self.data_file = data_file
         self.datapd = self.get_sensor_data(data_file)
         # Get the amount of features by removing the ID, label and timestamp
-        self.number_of_features = self.datapd.shape[1]-3
+        self.number_of_features = self.datapd.shape[1] - 3
         # Determine model in seperate function
         self.model = self.determine_model()
+        # Name of the activity
+        self.action_ID = activity
         # Argument is the set of labels that the user predicts
         self.labels = labels
         # A list of the ID's that we have labeled already
@@ -39,24 +47,21 @@ class Active_learning():
         self.X_pool, self.X_test, self.y_pool, self.y_test = self.split_pool_test()
         self.X_test = np.array(self.X_test)
         # Remove the labels from the X_pool set
-        self.X_pool['label'] = ['']*self.X_pool.shape[0]
-
-        with open('model.txt', 'wb') as f:
-            pickle.dump(self.model, f)
+        self.X_pool['label'] = [''] * self.X_pool.shape[0]
 
         # print(self.testing())
 
-        
     @property
     def unlabeled_ids(self):
         """We make a property so that when the list of labeled_ids changes we don't have to worry about changing this one.
         TODO: stash the set"""
         return set(range(self.X_pool.shape[0])).difference(set(self.labeled_ids))
-    
-    def determine_model(self):
-        """return the selected model for this action classification""" 
+
+    @staticmethod
+    def determine_model():
+        """return the selected model for this action classification"""
         return RandomForestClassifier(max_depth=9, criterion='gini')
-        
+
     @staticmethod
     def get_sensor_data(data_file: str):
         """read and return the datafile from the given path"""
@@ -69,8 +74,10 @@ class Active_learning():
         # return to X_pool, X_test, y_pool, y_test
         return train_test_split(self.datapd, self.datapd['label'], test_size=test_size, random_state=random_state)
 
-    def training(self, maximum_iterations, random_points: int = 3, cluster_points: int = 1):
-        """the process of training the datapoints, first set starting points, then iterate untill you have a certainty""" 
+    def training(self, maximum_iterations, random_points: int = 3, cluster_points: int = 1) -> None:
+        """the process of training the datapoints, first set starting points, then iterate until you have a certainty
+        """
+
         # Set randomized starting points       
         self.set_starting_points(random_points)
 
@@ -81,16 +88,21 @@ class Active_learning():
 
         self.clustered_starting_points(cluster_points)
         # pd.to_csv('hello?', self.datapd)
-        
+
         # Set the most ambiguous points iteratively
         self.iterate(maximum_iterations)
         # Write to csv file
         # self.write_to_file()
 
-    def set_starting_points(self, n_samples):
-        """Generates training set by selecting random starting points, labeling them, and checking if there's an instance of every activity"""
+        with open(fr'Models/model_{self.action_ID}_{maximum_iterations}.txt', 'wb') as f:
+            pickle.dump(self.model, f)
+
+    def set_starting_points(self, n_samples: int) -> None:
+        """Generates training set by selecting random starting points, labeling them, and checking if there's an
+        instance of every activity"""
+
         # Keep track of what activities we have labeled already
-        seen_activities = [] # list of strings
+        seen_activities = []  # list of strings
         # Amount of datapoints that we randomly sample
         range_var = n_samples * len(self.labels)
         self.X_pool.to_csv('test.csv')
@@ -117,7 +129,8 @@ class Active_learning():
                 # Add the ID to the list
                 self.labeled_ids.append(random_id)
 
-        # The determined number of random points were executed. We now set random points as long as not all predicted classes were found.
+        # The determined number of random points were executed. We now set random points as long as not all predicted
+        # classes were found.
         print('first stage is done!')
 
         # keep adding points until every activity is in the training set
@@ -149,23 +162,23 @@ class Active_learning():
             self.X_pool.at[self.labeled_ids[i], 'label'] = seen_activities[i]
         self.X_pool.to_csv('test2.csv')
         self.datapd.to_csv('test3.csv')
-            
-    def clustered_starting_points(self, n_samples):
+
+    def clustered_starting_points(self, n_samples: int) -> None:
         # Amount of clusters that we expect
         n_clusters = len(self.labels)
-        # Determine the meanse
-        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(self.unpreds[:,3:])
+        # Determine the means
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(self.unpreds[:, 3:])
         cert_indices = []
         # clust_centers = {label:kmeans.cluster_centers_[label] for label in range(len(self.labels))}
-        predictions = np.array(kmeans.predict(self.unpreds[:,3:]))
+        predictions = np.array(kmeans.predict(self.unpreds[:, 3:]))
         X = self.unpreds.copy()
         X[:, 1] = predictions
         for label in range(n_clusters):
             # Select samples with label
-            x = X[np.where(X[:,1]==label)[0], :]
-            for _ in range(n_samples): # For now
+            x = X[np.where(X[:, 1] == label)[0], :]
+            for _ in range(n_samples):  # For now
                 # Transform
-                total_dists = np.sum(kmeans.transform(x[:, 3:])**2, axis=1)
+                total_dists = np.sum(kmeans.transform(x[:, 3:]) ** 2, axis=1)
                 # Add certain samples
                 cert_indices.append(x[np.argmin(total_dists), 0])
                 # print(cert_indices)
@@ -186,8 +199,7 @@ class Active_learning():
                 self.preds = np.append(self.preds, line, axis=0)
                 self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == e), 0)
 
-
-    def iterate(self, max_iter):
+    def iterate(self, max_iter: int) -> None:
         # This function is the iterative process of active learning. Labeling the most ambiguous points
         iter_num = 0
         while True:
@@ -204,16 +216,19 @@ class Active_learning():
             # TODO: Sophie dit is jou idee idk wat je hiermee van plan was
             # show designer plot and performance: ask if they want to stop, continue, or retrain on new samples
             # self.plot_model(f'Iteration {iter_num}', new_index = new_index)
-            # question = input("Examine the plot. Enter C if you want to continue, R if your performance is not improving, or S if you are satisfied with this models' performance")
+            # question = input("Examine the plot. Enter C if you want to continue, R if your performance is not "
+            #                  "improving, or S if you are satisfied with this models' performance")
 
-    def set_ambiguous_point(self) -> int:
-        """Lets designer label ambiguous point"""          
+    def set_ambiguous_point(self) -> tuple[int, int]:
+        """Lets designer label ambiguous point"""
         # Determine the ID of the most ambiguous datapoint      
         get_id_to_label, margin, les_probs = self.find_most_ambiguous_id()
         # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
         # Get what label this ID is supposed to get
-        new_label = self.identify(get_id_to_label, les_probs=les_probs)  # just for testing, add les_probs as arg to les_probs if you want these to be printed
+        # Just for testing, add les_probs as arg to les_probs if you want these to be printed
+        new_label = self.identify(get_id_to_label,
+                                  les_probs=les_probs)
         if new_label == 'x':
             self.remove_row(get_id_to_label)
             return get_id_to_label, 0
@@ -232,7 +247,7 @@ class Active_learning():
             return get_id_to_label, margin
 
     def identify(self, id, les_probs=None):
-        """This function will call the the identification system from Gijs en Timo, for now it has been automated"""
+        """This function will call the identification system from Gijs en Timo, for now it has been automated"""
         # time.sleep(0.2)
         # print(id)
         # if les_probs is not None:
@@ -254,25 +269,25 @@ class Active_learning():
         #     else:
         #         return 'walking'
         timestamp = self.datapd.iloc[id, 2]
-        with open(r'processed_data_files.txt') as f:
-            for line in f: 
-                splited = line.strip().split(',')
-                if int(splited[1]) <= id <= int(splited[2]):
-                    video_file = splited[3]
+        with open(fr'Preprocessed-data/{self.action_ID}/processed_data_files.txt') as f:
+            for line in f:
+                split = line.strip().split(',')
+                if int(split[1]) <= id <= int(split[2]):
+                    video_file = split[3]
                     break
-        
+
         if les_probs is None:
             return self.vid.labeling(video_file, timestamp, self.window_size)
         else:
             return self.vid.labeling(video_file, timestamp, self.window_size, les_probs)
-            
+
         # return input(f'FOR TESTING: enter the selected label, id = {id}\n')
 
-    def find_most_ambiguous_id(self):
+    def find_most_ambiguous_id(self) -> tuple[int, int | Any, Any]:
         """Finds the most ambiguous sample. The unlabeled sample with the greatest
             difference between most and second most probably classes is the most ambiguous.
             Returns only the id of this sample"""
-        try:            
+        try:
             # Fit the model with the datapoints that we have currently labeled.
             self.model.fit(self.preds[:, 3:], self.preds[:, 1])
             # Use this model to get probabilities of datapoints belonging to a certain class.
@@ -299,7 +314,8 @@ class Active_learning():
             self.gini_margin_acc[-1][0] /= len(unlbld)
             self.gini_margin_acc[-1][1] = lowest_margin
 
-            les_probs = self.model.predict_proba(self.unpreds[np.where(self.unpreds[:, 0] == lowest_margin_sample_id)[0], 3:]).tolist()[0]
+            les_probs = self.model.predict_proba(
+                self.unpreds[np.where(self.unpreds[:, 0] == lowest_margin_sample_id)[0], 3:]).tolist()[0]
 
             # Add the accuracy, this is only for a nice plot and can be deleted afterwards.
             # self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
@@ -313,21 +329,22 @@ class Active_learning():
             raise ValueError(self.preds)
 
     @staticmethod
-    def gini_impurity_index(list_of_p):
+    def gini_impurity_index(list_of_p) -> float:
         # Return the gini: 1 - sum(p^2)
-        return 1-sum((item*item for item in list_of_p))
+        return 1 - sum((item * item for item in list_of_p))
 
-    def write_to_file(self):
-        self.unpreds[:, 1] = self.model.predict(self.unpreds[:, 3:])        
+    def write_to_file(self) -> None:
+        self.unpreds[:, 1] = self.model.predict(self.unpreds[:, 3:])
         self.preds = np.append(self.preds, self.unpreds, axis=0)
         self.preds = self.preds[self.preds[:, 0].argsort()]
         # print(self.preds[:5, :])
         names = np.array([self.datapd.columns])
-        np.savetxt(f"{self.data_file}_AL_predictionss.csv", np.append(names, self.preds, axis=0), delimiter=",", fmt='%s')
+        np.savetxt(fr"Preprocessed-data/{self.action_ID}/{self.data_file}_AL_predictionss.csv",
+                   np.append(names, self.preds, axis=0), delimiter=",", fmt='%s')
 
-    def testing(self, n_to_check=None):
-        """Checks for overfitting based on randomized sampling. To avoid having to make them label the entire test set, we ask 
-        the designer to confirm n predicted test labels"""
+    def testing(self, n_to_check: int = None) -> int:
+        """Checks for overwriting based on randomized sampling. To avoid having to make them label the entire test set,
+        we ask the designer to confirm n predicted test labels"""
         test_ids = []
         if n_to_check is None or n_to_check > len(self.X_test):
             n_to_check = len(self.X_test)
@@ -350,15 +367,15 @@ class Active_learning():
         error_count = 0
         for i in range(len(test_ids)):
             if predictions[i] != self.identify(test_ids[i]):
-            # if predictions[i] != self.identify(self.datapd.iloc[random_id]['time'])
+                # if predictions[i] != self.identify(self.datapd.iloc[random_id]['time'])
                 error_count += 1
         return error_count
 
-    def remove_row(self, id):
+    def remove_row(self, id: int) -> None:
         self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == id)[0][0], 0)
         self.datapd.drop(id, 0)
 
-    def plotting(self):
+    def plotting(self) -> None:
         # Plot the gini index, the margin and the test accuracy on every iteration
         plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
         plt.xlabel('Iterations [n]')
@@ -411,11 +428,11 @@ class Active_learning():
     #     plt.ylabel(ylabel)
     #     plt.title(title)
     #     plt.show()
-        
+
     # def label_test_set(self):
     #     pass
-        # predict y_test
-        # let user confirm or correct 
+    # predict y_test
+    # let user confirm or correct
 
     # def define_activities(self):
     #     activity_list = []
@@ -426,8 +443,7 @@ class Active_learning():
     #     for i in range(len(activity_list)):
     #         self.activities[activity_list[i]] = i + 1
     #     print(f"These are your activities: {activity_list}. If you want to make any changes, run this cell again. ")
-        # done = input("Type Y if you're done, or N if you want to add more activities. ")
-        # if done == "N":
-            # ask_activity = input() 
-        # return self.activities
-
+    # done = input("Type Y if you're done, or N if you want to add more activities. ")
+    # if done == "N":
+    # ask_activity = input()
+    # return self.activities

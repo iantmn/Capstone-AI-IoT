@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "gopro-telemetry": "^1.1.41",
-    "gpmf-extract": "^0.2.5"
-  }
-}
