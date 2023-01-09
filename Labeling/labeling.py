@@ -2,16 +2,18 @@ import numpy as np
 import cv2
 import moviepy.editor
 
-from collections.abc import Collection, Iterable, Set
+from collections.abc import Set
 
 
-class Labeling():
+class Labeling:
     def __init__(self, action_ID: str) -> None:
         self.action_ID = action_ID
         self.labels = set()
+        self.new_label = None
+
         self.get_insert_labels()
 
-    def get_insert_labels(self, labels_to_make: int = -1) -> Set[str]:
+    def get_insert_labels(self, labels_to_make: int = -1) -> set[str] | str:
         """Function to define new (specific amount of) labels. The labels cannot be the same as labels that are defined before.
         At the end, the new labels are added to the label attribute.
 
@@ -24,12 +26,14 @@ class Labeling():
         """
 
         # Empty set to save the new labels in
-        labels: Set[str] = set()
+        labels: set[str] = set()
 
-        # Every iterations, the labels_to_make variable will be decreased by one (if the label is allowed), until it is zero. If
+        # Every iteration, the labels_to_make variable will be decreased by one (if the label is allowed),
+        # until it is zero. If
         # labels_to_make is smaller than zero, the loop will not be exited automatically.
         while labels_to_make != 0:
-            label = input(f"Enter a new label for '{self.action_ID}' (enter 'l' to see the current labels and enter 'x' to stop):\n")
+            label = input(f"Enter a new label for '{self.action_ID}'"
+                          f"(enter 'l' to see the current labels and enter 'x' to stop):\n")
             # If 'l' is entered, a set with all the current labels (old and new) are displayed
             if label == 'l':
                 if hasattr(self, 'labels'):
@@ -54,7 +58,7 @@ class Labeling():
 
         return labels
 
-    def change_label(self) -> None:
+    def change_label(self) -> str:
         """Function to update an existing label"""
 
         while True:
@@ -72,8 +76,8 @@ class Labeling():
                 # Removing the label that needs to be updated
                 self.labels.discard(labels[i])
                 # Adding the new label
-                new_label = set(input("insert changed label name"))
-                self.labels |= self.new_label
+                new_label = input("insert changed label name")
+                self.labels |= set(self.new_label)
 
                 return new_label
 
@@ -81,19 +85,20 @@ class Labeling():
                 print(f"{index} not an integer!")
             except IndexError:
                 print(f"Index {index} out of bounds!")
-            
 
     def classify(self) -> str:
-        """Function to classify a video with one of the labels that is an attribute of the class. An command prompt will be shown to
-        to enter the right label. Also an option to add a new label is shown.
+        """Function to classify a video with one of the labels that is an attribute of the class. An command prompt will
+        be shown to enter the right label. Also, an option to add a new label is shown.
 
         Returns:
             str: The chosen label will be returned.
-        """        
+        """
+
         while True:
             # Prompt for choosing the label
             labels = list(self.labels)
             print("Choose the right label from the options below:")
+            i = 0
             for i, label in enumerate(labels):
                 print(f"\t{i}: {label}")
             print(f"\t{i+1}: None of the above")
@@ -119,11 +124,12 @@ class Labeling():
                 print(f"Index {index} out of bounds!")
 
 
-class VideoPlayer():
+class VideoPlayer:
     def __init__(self) -> None:
         self.width = 540
         self.height = 360
 
+    @staticmethod
     def play_vid(self, filename: str, timestamp: float = 0, window_size: float = 2) -> None:
         # Start playing the video
         is_closed = False

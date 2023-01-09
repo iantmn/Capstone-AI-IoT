@@ -3,7 +3,7 @@ import time
 
 from collections.abc import Collection
 
-class VideoLabeler():
+class VideoLabeler:
     def __init__(self, labels: Collection[str]) -> None:
         self.labels = list(labels)
 
@@ -11,9 +11,11 @@ class VideoLabeler():
         """Function to label a window in a given video at a given timestamp
 
         Args:
-            video_file (str): relative filelocation to the video file.
+            video_file (str): relative file-location to the video file.
             timestamp (float): starting point of the window, seen from the start of the video in seconds.
             window_size (float): length of the window in seconds.
+            probs: (Collection, optional): Probability that the frame showed is the corresponding label. Defaults to
+            None.
 
         Returns:
             str: the name of the selected label.
@@ -26,7 +28,7 @@ class VideoLabeler():
         self.display_html(video_file, timestamp, window_size)
         # Making sure that the cell is empty by waiting some time
         time.sleep(0.3)
-        if not probs is None:
+        if probs is not None:
             print(probs)
         
         # Selecting the label:
@@ -83,12 +85,13 @@ class VideoLabeler():
                 else:
                     print('Label does not exist! Try again')
 
-    def display_html(self, video_file: str, timestamp: float, window_size: float) -> None:
+    @staticmethod
+    def display_html(video_file: str, timestamp: float, window_size: float) -> None:
         """Function to display the video in the output cell. The video starts automatically at the timestamp,
-        plays for window_size seconds and than goes back to the timestamp to loop.
+        plays for window_size seconds and then goes back to the timestamp to loop.
 
         Args:
-            video_file (str): relative filelocation to the video file.
+            video_file (str): relative file-location to the video file.
             timestamp (float): starting point of the window, seen from the start of the video in seconds.
             window_size (float): length of the window in seconds.
         """

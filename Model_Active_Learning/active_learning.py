@@ -276,6 +276,8 @@ class ActiveLearning:
                     video_file = split[3]
                     break
 
+        print(id)
+        print(video_file)
         if les_probs is None:
             return self.vid.labeling(video_file, timestamp, self.window_size)
         else:

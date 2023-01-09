@@ -11,8 +11,8 @@ class Preprocessing:
     def __init__(self, action_ID: str) -> None:
         self.action_ID = action_ID
         self.output_file = fr'Preprocessed-data/{action_ID}/features_{action_ID}.txt'
-        if not os.path.exists('Preprocessed-data/Walking2'):
-            os.mkdir('Preprocessed-data/Walking2')
+        if not os.path.exists(f'Preprocessed-data/{action_ID}'):
+            os.mkdir(f'Preprocessed-data/{action_ID}')
 
     @staticmethod
     def time(data: Collection, samples_window: float) -> list[list[float]]:
@@ -671,5 +671,3 @@ def empty_files(files: Iterable[str]) -> None:
         if os.path.exists(file):
             with open(file, 'w') as f:
                 f.write('')
-        else:
-            print(f'File {file} does not exists')
