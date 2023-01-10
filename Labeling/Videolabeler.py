@@ -85,8 +85,7 @@ class VideoLabeler:
                 else:
                     print('Label does not exist! Try again')
 
-    @staticmethod
-    def display_html(video_file: str, timestamp: float, window_size: float) -> None:
+    def display_html(self, video_file: str, timestamp: float, window_size: float) -> None:
         """Function to display the video in the output cell. The video starts automatically at the timestamp,
         plays for window_size seconds and then goes back to the timestamp to loop.
 
@@ -95,6 +94,8 @@ class VideoLabeler:
             timestamp (float): starting point of the window, seen from the start of the video in seconds.
             window_size (float): length of the window in seconds.
         """
+
+        # TODO difference in start recording data and recording video. This works for the walking case...
         timestamp += 2.5
         print(timestamp, window_size)
         # Function to display HTML code  

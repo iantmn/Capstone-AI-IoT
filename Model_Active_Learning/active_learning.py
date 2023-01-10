@@ -58,9 +58,18 @@ class ActiveLearning:
         return set(range(self.X_pool.shape[0])).difference(set(self.labeled_ids))
 
     @staticmethod
-    def determine_model():
+    def determine_model(max_depth=None):
         """return the selected model for this action classification"""
-        return RandomForestClassifier(max_depth=15, criterion='gini')
+        return RandomForestClassifier(max_depth=max_depth, criterion='gini')
+
+    def update_model(self):
+        """This model determines the current average max depth of the trees in the random forest. If the depth has changed drastically since the last check we update the model"""
+        # Determine the depth of the current model
+        self.model.estimator_.max_depth
+        forest = self.determine_model().fit(self.preds)
+        avg_depth = sum(estimator.tree_.max_depth for estimator in forest.estimators_)/100
+        print(avg_depth)
+        self.model = self.determine_model(avg_depth)
 
     @staticmethod
     def get_sensor_data(data_file: str):
@@ -347,20 +356,32 @@ class ActiveLearning:
     def testing(self, n_to_check: int | None = None) -> int:
         """Checks for overwriting based on randomized sampling. To avoid having to make them label the entire test set,
         we ask the designer to confirm n predicted test labels"""
-        test_ids = []
+        
+        # TODO improve:
         if n_to_check is None or n_to_check > len(self.X_test):
             n_to_check = len(self.X_test)
-        while len(test_ids) != n_to_check:
-            random_id = random.randint(0, self.datapd.shape[0])
-            if random_id in self.X_test[:, 0] and random_id not in test_ids:
-                test_ids.append(random_id)
-        predictions = self.model.predict(np.array(self.datapd.iloc[test_ids, 3:]))
-        error_count = 0
-        for i in range(len(test_ids)):
-            if predictions[i] != self.identify(test_ids[i]):
-                # if predictions[i] != self.identify(self.datapd.iloc[random_id]['time'])
-                error_count += 1
-        return error_count
+        i = 0
+        while i < n_to_check-1:
+            test_ids = []
+            while len(test_ids) != n_to_check-i:
+                random_id = random.randint(0, self.datapd.shape[0])
+                if random_id in self.X_test[:, 0] and random_id not in test_ids:
+                    test_ids.append(random_id)
+            predictions = self.model.predict(np.array(self.datapd.iloc[test_ids, 3:]))
+            error_count = 0
+
+            for j in range(len(test_ids)):
+                result = self.identify(test_ids[j])
+                if result == 'x':
+                    pass
+                elif predictions[j] != result:
+                    error_count += 1
+                    i += 1
+                else:
+                    i += 1
+        print(f'Error rate: {error_count/n_to_check} ({n_to_check} samples)')
+        
+        return error_count, n_to_check
 
     def remove_row(self, id: int) -> None:
         self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == id)[0][0], 0)
