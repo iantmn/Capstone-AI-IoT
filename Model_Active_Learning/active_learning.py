@@ -60,7 +60,7 @@ class ActiveLearning:
     @staticmethod
     def determine_model():
         """return the selected model for this action classification"""
-        return RandomForestClassifier(max_depth=9, criterion='gini')
+        return RandomForestClassifier(max_depth=15, criterion='gini')
 
     @staticmethod
     def get_sensor_data(data_file: str):
@@ -105,7 +105,7 @@ class ActiveLearning:
         seen_activities = []  # list of strings
         # Amount of datapoints that we randomly sample
         range_var = n_samples * len(self.labels)
-        self.X_pool.to_csv('test.csv')
+        # self.X_pool.to_csv('test.csv')
         # Generate random points
         for i in range(range_var):
             # Pick a random point from X_pool
@@ -160,8 +160,8 @@ class ActiveLearning:
         for i in range(len(self.labeled_ids)):
             print(np.where(self.labeled_ids[i]), self.labeled_ids[i])
             self.X_pool.at[self.labeled_ids[i], 'label'] = seen_activities[i]
-        self.X_pool.to_csv('test2.csv')
-        self.datapd.to_csv('test3.csv')
+        # self.X_pool.to_csv('test2.csv')
+        # self.datapd.to_csv('test3.csv')
 
     def clustered_starting_points(self, n_samples: int) -> None:
         # Amount of clusters that we expect
@@ -337,34 +337,23 @@ class ActiveLearning:
 
     def write_to_file(self) -> None:
         self.unpreds[:, 1] = self.model.predict(self.unpreds[:, 3:])
-        self.preds = np.append(self.preds, self.unpreds, axis=0)
-        self.preds = self.preds[self.preds[:, 0].argsort()]
+        nptofile = np.append(self.preds, self.unpreds, axis=0)
+        nptofile = nptofile[nptofile[:, 0].argsort()]
         # print(self.preds[:5, :])
         names = np.array([self.datapd.columns])
-        np.savetxt(fr"Preprocessed-data/{self.action_ID}/{self.data_file}_AL_predictionss.csv",
-                   np.append(names, self.preds, axis=0), delimiter=",", fmt='%s')
+        np.savetxt(fr"{self.data_file.split('.csv')[0]}_AL_predictionss.csv",
+                   np.append(names, nptofile, axis=0), delimiter=",", fmt='%s')
 
-    def testing(self, n_to_check: int = None) -> int:
+    def testing(self, n_to_check: int | None = None) -> int:
         """Checks for overwriting based on randomized sampling. To avoid having to make them label the entire test set,
         we ask the designer to confirm n predicted test labels"""
         test_ids = []
         if n_to_check is None or n_to_check > len(self.X_test):
             n_to_check = len(self.X_test)
         while len(test_ids) != n_to_check:
-            while True:
-                random_id = random.randint(0, self.datapd.shape[0])
-                if random_id in self.X_test[:, 0] and random_id not in test_ids:
-                    test_ids.append(random_id)
-                    break
-        # print(self.datapd.iloc[test_ids, 3:])
-        # print(np.where(self.X_test[:, 0] in test_ids))
-        # print(f'shape: = {self.X_test[np.where(self.X_test[:, 0] == test_ids[0]), 3:].shape}')
-        # random_samples = self.X_test[np.where(self.X_test[:, 0] == test_ids[0]), 3:]
-        # print(random_samples, random_samples.shape)
-        # for id in test_ids[1:]:
-        #     random_samples = np.append(random_samples, self.X_test[np.where(self.X_test[:, 0] == id), 3:], axis=0)
-        # print(random_samples)
-        # random_samples = self.X_test[np.where(self.X_test[:, 0] in test_ids), 3:]
+            random_id = random.randint(0, self.datapd.shape[0])
+            if random_id in self.X_test[:, 0] and random_id not in test_ids:
+                test_ids.append(random_id)
         predictions = self.model.predict(np.array(self.datapd.iloc[test_ids, 3:]))
         error_count = 0
         for i in range(len(test_ids)):
