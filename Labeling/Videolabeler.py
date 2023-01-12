@@ -6,6 +6,7 @@ from collections.abc import Collection
 class VideoLabeler:
     def __init__(self, labels: Collection[str]) -> None:
         self.labels = list(labels)
+        self.html_id = 0
 
     def labeling(self, video_file: str, timestamp: float, window_size: float, probs: Collection = None) -> str:
         """Function to label a window in a given video at a given timestamp
@@ -102,18 +103,18 @@ class VideoLabeler:
         display(HTML(f'''
             <head>
                 <script type="text/javascript">
-                    function init(){{
+                    function init_{self.html_id}(){{
                         let timestamp = {timestamp};
                         let window_size = {window_size};
-                        let video = document.getElementById("window");
+                        let video = document.getElementById("{self.html_id}");
                         video.currentTime = timestamp;
-                        play();
+                        play_{self.html_id}();
                     }}
 
-                    function play(){{
+                    function play_{self.html_id}(){{
                         let timestamp = {timestamp};
                         let window_size = {window_size};
-                        let video = document.getElementById("window");
+                        let video = document.getElementById("{self.html_id}");
                         if (video.currentTime < timestamp || video.currentTime >= timestamp + window_size){{
                             video.currentTime = timestamp;
                         }}
@@ -126,18 +127,20 @@ class VideoLabeler:
                         <!--video.playbackRate = 2-->
                     }}
 
-                    function pause(){{
+                    function pause_{self.html_id}(){{
                         let timestamp = {timestamp};
                         let window_size = {window_size};
-                        let video = document.getElementById("window");
+                        let video = document.getElementById("{self.html_id}");
                         video.pause();
                     }}
                 </script>
             </head>
             <body>
-                <video id="window" width="500px" src="{video_file}" muted></video><br>
-                <script type="text/javascript">init()</script>
-                <button onclick="play()">Play</button>
-                <button onclick="pause()">Pause</button>
+                <video id="{self.html_id}" width="500px" src="{video_file}" muted></video><br>
+                <script type="text/javascript">init_{self.html_id}()</script>
+                <button onclick="play_{self.html_id}()">Play</button>
+                <button onclick="pause_{self.html_id}()">Pause</button>
             </body>
         '''))
+
+        self.html_id += 1
