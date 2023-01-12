@@ -1,2 +1,0 @@
-Data/data-lopen/Walking_part_1.csv,0,383,Data/data-lopen/Walking_part_1.mp4
-Data/data-lopen/Walking_part_2.csv,384,513,Data/data-lopen/Walking_part_2.mp4
