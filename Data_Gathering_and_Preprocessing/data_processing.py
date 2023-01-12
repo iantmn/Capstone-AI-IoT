@@ -163,8 +163,8 @@ class Preprocessing:
             # Check the file extension
             file_extension = input_file.split('.')[-1]
             if file_extension == 'txt':
-                # Skip the header lines
-                for _ in range(4):
+                # Skip the header lines #TODO make general?
+                for _ in range(0):
                     f.readline()
             elif file_extension == 'csv':
                 # Skip the header lines, and the first line
@@ -341,10 +341,10 @@ class Preprocessing:
             # When the end of a datafile is reached, this value is set to False and the loop is exited
             not_finished = True
 
-            if input_file_b != '':
-                print(sampling_frequency, sampling_frequency_b, samples_window, samples_window_b)
-            else:
-                print(sampling_frequency, samples_window)
+            # if input_file_b != '':
+            #     print(sampling_frequency, sampling_frequency_b, samples_window, samples_window_b)
+            # else:
+            #     print(sampling_frequency, samples_window)
 
             # Opening the data file again and skipping the header lines.
             k = 0
@@ -353,12 +353,14 @@ class Preprocessing:
                 if input_file_b != '':
                     f_b = open(input_file_b)
                 # print(start_offset, stop_offset, size_a)
-                for _ in range(0 + int(start_offset * sampling_frequency)): 
+                line = f.readline().strip().split(',')
+                while float(line[0]) < start_offset:
                     line = f.readline().strip().split(',')
-                    timestamp_counter += 1
+                    # timestamp_counter += 1
                 if input_file_b != '':
-                    for _ in range(0 + int(start_offset * sampling_frequency_b)):
-                        f_b.readline()
+                    line_b = f_b.readline().strip().split(',')
+                    while float(line_b[0]) < start_offset:
+                        line_b = f_b.readline().strip().split(',')
                 # timestamp_list.append(line[0])
                 # Opening the output file; the extracted features will be put in the file
                 with open(self.output_file, 'a') as g:
@@ -367,100 +369,160 @@ class Preprocessing:
                         # while k < 1:
                         # If there is no window made yet
                         if len(current_window) == 0:
-                            for _ in range(samples_window):
+                            startpoint = start_offset
+                            timestamp_list.append(startpoint)
+
+                            current_window.append([])
+                            for i in range(start, stop + 1):
+                                current_window[-1].append(float(line[i]))
+
+                            while float(line[0]) < startpoint + size_a:
                                 # Store a list of the sensordata of the line that is read
                                 line = f.readline().strip().split(',')
                                 # Initialise the current window, make sure the added value is an empty list
                                 current_window.append([])
                                 for i in range(start, stop + 1):
                                     current_window[-1].append(float(line[i]))
-                                # check if the sample is the first of a window
-                                if timestamp_counter % samples_offset == 0:
-                                    timestamp_list.append(line[0])
-                                # if float(timestamp_list[-1]) + offset <= float(line[0]):
-                                #     timestamp_list.append(line[0])
-                                # We read a line, keep count
-                                timestamp_counter += 1
+
+                            startpoint += offset
                         else:
                             # If this is the first time that previous window is called, initialise it as a copy of
                             # current window. Use .copy() to prevent aliasing
                             if len(prev_window) == 0:
-                                for i in range(samples_window):
+                                for i in range(len(current_window)):
                                     prev_window.append(current_window[i].copy())
                             # Else we make it a direct copy of the current window as well
                             else:
-                                for i in range(samples_window):
-                                    prev_window[i] = current_window[i].copy()
+                                if len(current_window) <= len(prev_window):
+                                    for i in range(len(current_window)):
+                                        prev_window[i] = current_window[i].copy()
+                                    while len(current_window) < len(prev_window):
+                                        prev_window.pop(-1)
+                                else:
+                                    for i in range(len(prev_window)):
+                                        prev_window[i] = current_window[i].copy()
+                                    while len(current_window) > len(prev_window):
+                                        i += 1
+                                        prev_window.append(current_window[i].copy())
 
                             # Overwrite the current window values with it's previous values
                             # The current window is slided the samples_offset amount of samples into the future. Thus
                             # The samples [samples_offset:] of prev_window are the first samples for the current window.
                             # The rest of the samples are new and read from the data file
-                            for i in range(samples_window - samples_offset):
-                                current_window[i] = prev_window[i + samples_offset].copy()
+                            i = 0
+                            for lst in prev_window:
+                                if lst[0] >= startpoint:
+                                    current_window[i] = lst.copy()
+                                    i += 1
 
                             # Read new lines from the file and add these to the end of the current file
                             try:
-                                for i in range(samples_offset):
-                                    line = f.readline().strip().split(',')
+                                while float(line[0]) < startpoint + size_a:
                                     # The last line of the file is an empty string. When detected we exit the while loop
                                     if line[0] == '':
                                         not_finished = False
-                                        print('It stopped at acc data', timestamp_list)
+                                        # print('It stopped at acc data', timestamp_list)
                                         break
                                     elif float(line[0]) > last_point - stop_offset + offset:
                                         not_finished = False
-                                        print('it stopped at acc data', last_point - stop_offset, prev_window[-1], line[0], timestamp_list)
+                                        # print('it stopped at acc data', last_point - stop_offset, prev_window[-1], line[0], timestamp_list)
                                         break
+                                    if i > len(current_window) - 1:
+                                        current_window.append([])
+                                        for j in range(start, stop + 1):
+                                            current_window[-1].append(None)
                                     # Read samples_offset amount of samples and add these to the current window
                                     for j in range(start, stop + 1):
                                         # print(i, i + samples_window - samples_offset, j, line, len(current_window), len(current_window[0]))
-                                        current_window[i + samples_window - samples_offset][j - start] = float(line[j])
+                                        current_window[i][j - start] = float(line[j])
+                                    i += 1
+                                    line = f.readline().strip().split(',')
+                                    if line[0] == '':
+                                        not_finished = False
+                                        break
 
-                                    # check if the sample is the first of a window
-                                    if timestamp_counter % samples_offset == 0:
-                                        timestamp_list.append(line[0])
-                                    # if float(timestamp_list[-1]) + offset <= float(line[0]):
-                                    #     timestamp_list.append(line[0])
-                                    # We read a line, keep count
-                                    timestamp_counter += 1
+                                while i < len(current_window) - 1:
+                                    current_window.pop(-1)
+
+
                             except EOFError:
                                 not_finished = False
 
                         if input_file_b != '':
                             # for readabilitiy check comments above, this is repeated code
-                            if len(current_window_b) == 0:
-                                for _ in range(samples_window_b):
-                                    line = f_b.readline().strip().split(',')
+                            if len(current_window) == 0:
+                                current_window_b.append([])
+                                for i in range(start, stop + 1):
+                                    current_window_b[-1].append(float(line_b[i]))
+
+                                while float(line_b[0]) < startpoint + size_b:
+                                    line_b = f.readline().strip().split(',')
                                     current_window_b.append([])
                                     for i in range(start, stop + 1):
-                                        current_window_b[-1].append(float(line[i]))
+                                        current_window_b[-1].append(float(line_b[i]))
+                                        
                             else:
                                 if len(prev_window_b) == 0:
-                                    for i in range(samples_window_b):
+                                    for i in range(len(current_window_b)):
                                         prev_window_b.append(current_window_b[i].copy())
+                                # Else we make it a direct copy of the current window as well
                                 else:
-                                    for i in range(samples_window_b):
-                                        prev_window_b[i] = current_window_b[i].copy()
-                                for i in range(samples_window_b - samples_offset_b):
-                                    current_window_b[i] = prev_window_b[i + samples_offset_b].copy()
+                                    if len(current_window_b) <= len(prev_window_b):
+                                        for i in range(len(current_window_b)):
+                                            prev_window_b[i] = current_window_b[i].copy()
+                                        while len(current_window_b) < len(prev_window_b):
+                                            prev_window_b.pop(-1)
+                                    else:
+                                        for i in range(len(prev_window_b)):
+                                            prev_window_b[i] = current_window_b[i].copy()
+                                        while len(current_window_b) > len(prev_window_b):
+                                            i += 1
+                                            prev_window_b.append(current_window_b[i].copy())
 
+                                # Overwrite the current window values with it's previous values
+                                # The current window is slided the samples_offset amount of samples into the future. Thus
+                                # The samples [samples_offset:] of prev_window are the first samples for the current window.
+                                # The rest of the samples are new and read from the data file
+                                i = 0
+                                for lst in prev_window_b:
+                                    if lst[0] >= startpoint:
+                                        current_window_b[i] = lst.copy()
+                                        i += 1
+
+                                # Read new lines from the file and add these to the end of the current file
                                 try:
-                                    for i in range(samples_offset_b):
-                                        line = f_b.readline().strip().split(',')
-                                        if line[0] == '':
+                                    while float(line_b[0]) < startpoint + size_b:
+                                        # The last line of the file is an empty string. When detected we exit the while loop
+                                        if line_b[0] == '':
                                             not_finished = False
-                                            print('It stopped at gyrocsope', timestamp_list, timestamp_list)
+                                            # print('It stopped at gyro data', timestamp_list)
                                             break
-                                        elif float(line[0]) > last_point_b - stop_offset + offset:
+                                        elif float(line[0]) > last_point - stop_offset + offset:
                                             not_finished = False
-                                            print('It stopped at gyrocsope', line[0], last_point - stop_offset, current_window[-1], timestamp_list)
+                                            # print('it stopped at gyro data', last_point - stop_offset, prev_window_b[-1], line_b[0], timestamp_list)
                                             break
+                                        if i > len(current_window_b) - 1:
+                                            current_window_b.append([])
+                                            for j in range(start, stop + 1):
+                                                current_window_b[-1].append(None)
+                                        # Read samples_offset amount of samples and add these to the current window
                                         for j in range(start, stop + 1):
-                                            current_window_b[i + samples_window_b - samples_offset_b][j - start] = float(line[j])
+                                            # print(i, i + samples_window - samples_offset, j, line, len(current_window), len(current_window[0]))
+                                            current_window_b[i][j - start] = float(line_b[j])
+                                        i += 1
+                                        line_b = f_b.readline().strip().split(',')
+                                        if line_b[0] == '':
+                                            not_finished = False
+                                            break
+
+                                    while i < len(current_window) - 1:
+                                        current_window.pop(-1)
+
                                 except EOFError:
-                                    print('It stopped at gyrocsope', len(timestamp_list), timestamp_list)
                                     not_finished = False
+                        
+                        timestamp_list.append(startpoint)
+                        startpoint += offset
 
                         if not_finished:
                             # choose the length of the zero padding of the window. Increased definition
@@ -488,7 +550,7 @@ class Preprocessing:
                             # build a string of the feature data. The first element of the string is the timestamp, pop
                             # this timestamp
                             print_timestamps.append(timestamp_list.pop(0))
-                            features_list = [print_timestamps[-1]]
+                            features_list = [str(print_timestamps[-1])]
                             for tup in features:
                                 for i, data in enumerate(tup):
                                     features_list.append(str(data))
@@ -529,14 +591,13 @@ class Preprocessing:
                             k += 1
                             current_ID += 1
 
-                        print(timestamp_list)
                     # Writing the first and the last index and the relative path to the video to the output
                     # file with the files that are used.
                     with open(fr'Preprocessed-data/{self.action_ID}/processed_data_files.txt', 'a') as h:
                         h.write(f",{last_index},{last_index + current_ID - 1},{video_file}\n")
                 if input_file_b != '':
                     f_b.close()
-                print(len(print_timestamps), print_timestamps)
+                # print(len(print_timestamps), print_timestamps)
             # print(k)
             plt.show()
 
@@ -565,6 +626,7 @@ class Preprocessing:
             FileNotFoundError: Error raised if the given input-file cannot be found.
             ValueError: Error raised if a data point cannot be converted to a float.
         """
+
         try:
             # Calculate the sampling frequency and the last timestamp (the third parameter, size, is not used)
             sampling_frequency, last_point = Preprocessing.get_sampling_frequency(input_file, start_offset,
@@ -574,8 +636,8 @@ class Preprocessing:
             with open(input_file) as f:
                 # List with the datapoints, each row will have the data of one sensor
                 data: list[list[float]] = []
-                # Skip the first 4 lines (contains no data) + the amount of samples in the start_offset
-                for _ in range(4 + int(start_offset * sampling_frequency)): f.readline()
+                # Skip the first 4 lines (contains no data) + the amount of samples in the start_offset #TODO make general?
+                for _ in range(0 + int(start_offset * sampling_frequency)): f.readline()
 
                 not_finished = True
                 while not_finished:
@@ -620,11 +682,12 @@ class Preprocessing:
         Returns:
             tuple[float, float, float, float]: The results: average period, standard deviation, minimal period and maximal period
         """
+
         try:
             # Try opening the file
             with open(input_file) as f:
-                # Read the first lines (does not contain data)
-                for _ in range(4):
+                # Read the first lines (does not contain data) # TODO make general?
+                for _ in range(0):
                     f.readline()
 
                 # Array with the periods
@@ -662,6 +725,7 @@ class Preprocessing:
         Args:
             input_file (str): input file where the unscaled features are stored
         """
+
         # First, manually build the data_array, this is because importing with a header and starting columns is a pain
         with open(input_file) as f:
             # Split the set in header, starting columns and actual data
@@ -693,7 +757,7 @@ class Preprocessing:
         sensors_amount = (data_array.shape[1]) // fa
         datapoints_amount = data_array.shape[0] - 1
 
-        print(f'amount of sensors: {sensors_amount}, amount of features per sensor: {fa}')
+        print(f'Amount of sensors: {sensors_amount}, amount of features per sensor: {fa}')
 
         if sensors_amount > 6:
             raise ValueError('You have used more than 6 sensors, we have not yet implemented ')
@@ -749,7 +813,16 @@ class Preprocessing:
 
 
 def empty_files(files: Iterable[str]) -> None:
+    """Function to empty the files given at the input. If a file does not exist, nothing
+    is done.
+
+    Args:
+        files (Iterable[str]): File locations that will be made empty, seen from the main script
+    """    
+
     for file in files:
+        # Check whether the file exists
         if os.path.exists(file):
             with open(file, 'w') as f:
+                # Write an empty string
                 f.write('')
