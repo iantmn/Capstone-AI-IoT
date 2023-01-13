@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from AI_for_Designers.Videolabeler import VideoLabeler
 
 import pickle
