@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -31,6 +32,8 @@ class ActiveLearning:
         self.number_of_features = self.datapd.shape[1] - 3
         # Determine model in seperate function
         self.model = self.determine_model()
+        # PCA
+        self.determine_pca()
         # Name of the activity
         self.action_ID = activity
         # Argument is the set of labels that the user predicts
@@ -234,6 +237,8 @@ class ActiveLearning:
         get_id_to_label, margin, les_probs = self.find_most_ambiguous_id()
         # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
+        # Print PCA
+        self.print_predition_point(get_id_to_label)
         # Get what label this ID is supposed to get
         # Just for testing, add les_probs as arg to les_probs if you want these to be printed
         new_label = self.identify(get_id_to_label,
@@ -386,6 +391,22 @@ class ActiveLearning:
     def remove_row(self, id: int) -> None:
         self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == id)[0][0], 0)
         self.datapd.drop(id, 0)
+
+    def determine_pca(self):
+        pca = PCA(n_components=2, svd_solver='auto')
+        self.pca = np.array(pca.fit_transform(self.datapd.iloc[:, 3:]))
+        self.pca = np.append(np.array([[i for i in range(len(self.datapd))]]).reshape(-1, 1), self.pca, axis=1)
+
+    def print_predition_point(self, current_id):
+        ids = self.labeled_ids
+        ids.sort()
+        plt.scatter(self.pca[:, 1], self.pca[:, 2], c='grey')
+        for e in ids:
+            plt.scatter(self.pca[e, 1], self.pca[e, 2], c='blue')
+        plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x')
+
+        plt.savefig(f'Plots/plot_to_label_{loremipsum}.png')
+
 
     def plotting(self) -> None:
         # Plot the gini index, the margin and the test accuracy on every iteration
