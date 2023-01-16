@@ -15,7 +15,12 @@ class Stats:
         self.data_file = data_file
         self.labels = labels
     
-    def get_percetages(self) -> dict[str, float]:
+    def get_percentage(self) -> dict[str, float]:
+        """Get the percentage of each label in the data file
+
+        Returns:
+            dict[str, float]: key is the label, value is the percentage
+        """        
         total = 0
         result = {}
         for label in self.labels:
@@ -33,12 +38,19 @@ class Stats:
         return result
 
     def print_percentages(self) -> None:
-        dct = self.get_percetages()
+        """Prints the percentages per label
+        """        
+        dct = self.get_percentage()
         print('Percentages per label:')
         for key, item in dct.items():
             print(f' {key}: {item}')
 
-    def get_ghan_chart(self, offset):
+    def get_ghan_chart(self, offset: int) -> None:
+        """Get the Gantt chart of the data file
+
+        Args:
+            offset (int): offset between the bars of the chart
+        """        
         # init_notebook_mode()
 
         df = pd.read_csv(self.data_file)
@@ -78,6 +90,11 @@ class Stats:
         pio.write_image(fig, 'Plots/distribution.png', scale=6, width=1080*2)
 
     def show_gan_chart(self, offset: float) -> None:
+        """shows the Gantt chart of the data file
+
+        Args:
+            offset (float): offset between the bars of the chart
+        """        
         self.get_ghan_chart(offset)
         img = mpimg.imread('Plots/distribution.png')
         imgplot = plt.imshow(img)
