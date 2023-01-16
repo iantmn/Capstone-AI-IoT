@@ -2,19 +2,14 @@ import json
 import pandas as pd
 from datetime import datetime
 
-all_paths = [   "GoPro/Ian_stofzuigen/Json_files/output_path_gang_langestrook_2",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_keuken_langestrook",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_slaapkamer_alles",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_slaapkamer_onder_bed",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_gang_langestrook",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_trap_2",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_slaapkamer_langestrook",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_trap",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_voorkamer_bank",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_voorkamer_lange_stroken",
-                "GoPro/Ian_stofzuigen/Json_files/output_path_voorkamer_tapijt"
+all_paths = [   "GoPro/Timo Fietsen/Json_files/Timo_fietsen_GH010031",
+                "GoPro/Timo Fietsen/Json_files/Timo_fietsen_GH010032",
+                "GoPro/Timo Fietsen/Json_files/Timo_fietsen_GH010033",
+                "GoPro/Timo Fietsen/Json_files/Timo_fietsen_GH010034",
+                "GoPro/Timo Fietsen/Json_files/Timo_fietsen_GH010035",
+                "GoPro/Timo Fietsen/Json_files/Timo_fietsen_GH020034"
                 ]
-desired_data = "ACCL" # can also be "GYRO"
+desired_data = "GYRO" # can also be "GYRO"
 
 
 for path in all_paths:
