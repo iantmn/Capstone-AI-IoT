@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from AI_for_Designers.Videolabeler import VideoLabeler
 
+import os
 import pickle
 import random
 import numpy as np
@@ -45,6 +46,7 @@ class ActiveLearning:
 
         self.vid = VideoLabeler(labels)
         self.window_size = window_size
+        self.html_id = 0
 
         # X_pool is the dataset that we use for building the model. X_test is to test the model
         self.X_pool, self.X_test, self.y_pool, self.y_test = self.split_pool_test()
@@ -238,7 +240,7 @@ class ActiveLearning:
         # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
         # Print PCA
-        self.print_predition_point(get_id_to_label)
+        # self.print_predition_point(get_id_to_label)
         # Get what label this ID is supposed to get
         # Just for testing, add les_probs as arg to les_probs if you want these to be printed
         new_label = self.identify(get_id_to_label,
@@ -260,7 +262,7 @@ class ActiveLearning:
             # Return the label and the margin
             return get_id_to_label, margin
 
-    def identify(self, id, les_probs=None):
+    def identify(self, id, les_probs=None, process: str = ''):
         """This function will call the identification system from Gijs en Timo, for now it has been automated"""
         # time.sleep(0.2)
         # print(id)
@@ -293,9 +295,9 @@ class ActiveLearning:
         # print(id)
         # print(video_file)
         if les_probs is None:
-            return self.vid.labeling(video_file, timestamp, self.window_size)
+            return self.vid.labeling(video_file, timestamp, self.window_size, process=process)
         else:
-            return self.vid.labeling(video_file, timestamp, self.window_size, les_probs)
+            return self.vid.labeling(video_file, timestamp, self.window_size, les_probs, process=process)
 
         # return input(f'FOR TESTING: enter the selected label, id = {id}\n')
 
@@ -379,7 +381,7 @@ class ActiveLearning:
             error_count = 0
 
             for j in range(len(test_ids)):
-                result = self.identify(test_ids[j])
+                result = self.identify(test_ids[j], process='TESTING')
                 if result == 'x':
                     pass
                 elif predictions[j] != result:
@@ -408,11 +410,15 @@ class ActiveLearning:
             plt.scatter(self.pca[e, 1], self.pca[e, 2], c='blue')
         plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x')
 
-        plt.savefig(f'Plots/plot_to_label_{loremipsum}.png')
+        plt.savefig(f'Plots/plot_to_label_{self.html_id}.png')
+        if self.html_id > 0:
+            os.remove(f'Plots/plot_to_label_{self.html_id - 1}.png')
+        self.html_id += 1
 
 
     def plotting(self) -> None:
         # Plot the gini index, the margin and the test accuracy on every iteration
+        plt.clf()
         plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
         plt.xlabel('Iterations [n]')
         plt.ylabel('Magnitude')

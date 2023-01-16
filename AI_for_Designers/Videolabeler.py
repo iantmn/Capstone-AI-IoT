@@ -10,7 +10,7 @@ class VideoLabeler:
         self.labels = list(labels)
         self.html_id = 0
 
-    def labeling(self, video_file: str, timestamp: float, window_size: float, probs: Collection = None) -> str:
+    def labeling(self, video_file: str, timestamp: float, window_size: float, probs: Collection = None, process: str = '') -> str:
         """Function to label a window in a given video at a given timestamp
 
         Args:
@@ -30,7 +30,10 @@ class VideoLabeler:
         # Show and play the video
         self.display_html(video_file, timestamp, window_size)
         # Making sure that the cell is empty by waiting some time
-        time.sleep(0.3)
+
+        time.sleep(0.8)
+        if process:
+            print(process)
         if probs is not None:
             print(probs)
         
@@ -146,7 +149,7 @@ class VideoLabeler:
                         <button onclick="pause_{self.html_id}()">Pause</button>
                     </div>
                     <div style="flex:1">
-                        <img src="Plots/plot_to_label.png" height="300">
+                        <img src="Plots/plot_to_label_{self.html_id}.png" height="300"></img>
                     </div>
                 </div>
             </body>
