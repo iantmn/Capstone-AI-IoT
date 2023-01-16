@@ -2,6 +2,7 @@
 This document is for testing which models we are going to use. Exploration is being done and this document is not structured in a way that is suitable for production.
 """
 # ------ import ------ #
+import time
 from sklearn.cluster import KMeans
 import numpy as np
 import pandas as pd
@@ -30,23 +31,23 @@ n_clusters = 4
 train_size = 0.8
 
 # supervised learning
-do_knn = False
-do_svc = False
+do_knn = True
+do_svc = True
 
 # random forest
-do_rf = False
-plot_rf = False
-plot_rf_tree = False
+do_rf = True
+plot_rf = True
+plot_rf_tree = True
 
 # other models
-do_dt = False
-do_bagged_class = False
-do_gd = False
-do_gnb = False
+do_dt = True
+do_bagged_class = True
+do_gd = True
+do_gnb = True
 
 # clustering
-do_kmeans = False
-do_kmeans_plot = False
+do_kmeans = True
+do_kmeans_plot = True
 
 # gridsearch
 do_gridsearch_svc = False
@@ -68,7 +69,7 @@ do_feature_importance = True
 #         x.append(row)
 
 print("Importing data...")
-x = pd.read_csv(r'Data Gathering and Preprocessing/features_Walking_scaled.csv')
+x = pd.read_csv(r'Preprocessed-data\Walking\features_Walking_scaled.csv')
 print("Data imported")
 print(f"Shape of data: {x.shape}")
 
@@ -107,6 +108,7 @@ if do_kmeans:
     # ------ Training KMeans ------ #
 
     print("Training KMeans...")
+    start_time = time.perf_counter()
     model = KMeans(n_clusters=n_clusters)
     model.fit(x_train)
     label = model.labels_
@@ -114,6 +116,7 @@ if do_kmeans:
 
     pred_y = model.predict(x_test)
     print(f"KMeans accuracy: {accuracy_score(y_test, pred_y)}")
+    print(f"KMeans time: {time.perf_counter() - start_time:.2f}")	
 
     model = KMeans(n_clusters=n_clusters)
     model.fit(df)
@@ -200,6 +203,7 @@ if do_kmeans:
 
 if do_knn:
     print("Training KNN model...")
+    start_time = time.perf_counter()
     knn = KNN(n_neighbors=3)
     knn.fit(x_train, y_train)
 
@@ -209,7 +213,8 @@ if do_knn:
     y_pred_test = knn.predict(x_test)
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
-    print(f"knn: {accuracy_train=}, {accuracy_test=}")
+    print(f"knn accuracy: {accuracy_train=}, {accuracy_test=}")
+    print(f"knn time: {time.perf_counter() - start_time:.2f}s")
 
 # ------ svc ------ #
 
@@ -224,12 +229,14 @@ if do_svc:
     y_pred_test = svc.predict(x_test)
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
-    print(f"svc: {accuracy_train=}, {accuracy_test=}")
+    print(f"svc accuracy: {accuracy_train=}, {accuracy_test=}")
+    print(f"svc time: {time.perf_counter() - start_time:.2f}")
     
 # ------ random forest ------ #
 
 if do_rf:
     print("Training Random Forest model...")
+    start_time = time.perf_counter()
     rf = RF()
     rf.fit(x_train, y_train)
 
@@ -239,9 +246,12 @@ if do_rf:
     y_pred_test = rf.predict(x_test)
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
-    print(f"rf: {accuracy_train=}, {accuracy_test=}")
-    print(f"rf: {rf.score(x_test, y_test)=}")
+    print(f"rf accuracy: {accuracy_train=}, {accuracy_test=}")
+    print(f"rf score: {rf.score(x_test, y_test)=}")
+    print(f"rf time: {time.perf_counter() - start_time:.2f}")
     if plot_rf:
+        if not do_kmeans:
+            raise Exception("Kmeans (do_kmeans = True) must be enabled to plot RF model vs actual")
         print("Plotting RF model vs actual...")
         fig, axs = plt.subplots(2, 2)
         axs[0, 0].title.set_text('kmeans model result')
@@ -271,73 +281,11 @@ if do_rf:
         plot_tree(estimator, filled=True, feature_names=x.columns, class_names=le.classes_, impurity=True, rounded=True)
         plt.show()
 
-    if plot_trees:
-        print(np.shape(y_test))
-        print(y_test)
-        class_A_corr = 0
-        class_B_corr = 0
-        class_C_corr = 0
-        class_A_incorr = 0 
-        class_B_incorr = 0
-        class_C_incorr = 0
-        for tree in rf.estimators_:
-            tree.fit(x_train, y_train)
-            test_pred = tree.predict(x_test)
-            print(test_pred)
-            print(y_test)
-            print(len(test_pred))
-            print(len(y_test))
-            for pred in test_pred:
-                for actual in y_test:
-                    if pred == 0 and actual == 0:
-                        class_A_corr += 1
-                    elif pred == 1 and actual == 1:
-                        class_B_corr += 1
-                    elif pred == 2 and actual == 2:
-                        class_C_corr += 1
-                    elif pred == 0 and actual > 0:
-                        class_A_incorr += 1
-                    elif pred == 1 and actual != 1:
-                        class_B_incorr += 1
-                    elif pred == 2 and actual != 2:
-                        class_C_incorr += 1
-            acc_score = accuracy_score(y_test, test_pred)
-            print(acc_score)
-
-        lst_corr = [class_A_corr, class_B_corr, class_C_corr]
-        print(lst_corr)
-        lst_incorr = [class_A_incorr, class_B_incorr, class_C_incorr]
-        print(lst_incorr)
-        bins = ['Class A', 'Class B', 'Class C']
-        y_pos = np.arange(len(bins))    
-        plt.bar(y_pos - 0.2, lst_corr, 0.4, label='Correct')
-        plt.bar(y_pos + 0.2, lst_incorr, 0.4, label='Incorrect')
-        plt.xticks(y_pos, bins)
-        plt.xlabel("Distribution")
-        plt.ylabel("Values")
-        plt.legend()
-        plt.show()
-        # X = ['Group A','Group B','Group C']
-        # Ygirls = [class_A_corr, class_B_corr, class_C_corr]
-        # Zboys = [class_A_incorr, class_B_incorr, class_C_incorr]
-        
-        # X_axis = np.arange(len(X))
-        
-        # plt.bar(X_axis, Ygirls, 0.4, label = 'Girls')
-        # plt.bar(X_axis, Zboys, 0.4, label = 'Boys')
-        
-        # plt.xticks(X_axis, X)
-        # plt.xlabel("Groups")
-        # plt.ylabel("Number of Students")
-        # plt.title("Number of Students in each group")
-        # plt.legend()
-        # plt.show()
-
-    
 # ------ decision tree ------ #
 
 if do_dt:
     print("training decision tree...")
+    start_time = time.perf_counter()
     dt = DecisionTreeClassifier()
     dt.fit(x_train, y_train)
 
@@ -351,12 +299,14 @@ if do_dt:
     plot_tree(dt, filled=True)
 
 
-    print(f"dt: {accuracy_train=}, {accuracy_test=}")
+    print(f"dt accuracy: {accuracy_train=}, {accuracy_test=}")
+    print(f"dt time: {time.perf_counter() - start_time:.2f}")
 
 # ------ bagged classifier ------ #
 
 if do_bagged_class:
     print("training bagged classifier...")
+    start_time = time.perf_counter()
     chosen = SVC()
     num_models = 100
     model = BaggingClassifier(base_estimator=chosen, n_estimators=num_models, random_state=42)
@@ -369,12 +319,14 @@ if do_bagged_class:
     accuracy_test = accuracy_score(y_test, y_pred_test)
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
-    print(f"bagged {str(chosen)}: {accuracy_train=}, {accuracy_test=}")
+    print(f"bagged accuracy: {str(chosen)}: {accuracy_train=}, {accuracy_test=}")
+    print(f"bagged time: {time.perf_counter() - start_time:.2f}")
 
 # ------ gradient descent ------ #
 
 if do_gd:
     print("training SGD classifier...")
+    start_time = time.perf_counter()
     gd = SGDClassifier()
     gd.fit(x_train, y_train)
 
@@ -384,12 +336,14 @@ if do_gd:
     y_pred_test = gd.predict(x_test)
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
-    print(f"sgd: {accuracy_train=}, {accuracy_test=}")
+    print(f"sgd accuracy: {accuracy_train=}, {accuracy_test=}")
+    print(f"sgd time: {time.perf_counter() - start_time:.2f}")
 
 # ------ guassian naive Bayes ------ #
 
 if do_gnb:
     print("training gaussian naive bayes...")
+    start_time = time.perf_counter()
     nb = GaussianNB()
     nb.fit(x_train, y_train)
 
@@ -399,7 +353,8 @@ if do_gnb:
     y_pred_test = nb.predict(x_test)
     accuracy_test = accuracy_score(y_test, y_pred_test)
 
-    print(f"gaussian nb: {accuracy_train=}, {accuracy_test=}")
+    print(f"gaussian nb accuracy: {accuracy_train=}, {accuracy_test=}")
+    print(f"gaussion nb time: {time.perf_counter() - start_time:.2f}")
 
 
 # ------ gridsearch svc ------ #

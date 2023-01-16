@@ -20,7 +20,7 @@ from typing import Any
 
 
 class ActiveLearning:
-    def __init__(self, data_file: str, activity: str, labels: list[str], window_size: float = 2):
+    def __init__(self, data_file: str, activity: str, labels: list[str], window_size: float):
         self.preds = None
         self.unpreds = None
 
@@ -290,8 +290,8 @@ class ActiveLearning:
                     video_file = split[3]
                     break
 
-        print(id)
-        print(video_file)
+        # print(id)
+        # print(video_file)
         if les_probs is None:
             return self.vid.labeling(video_file, timestamp, self.window_size)
         else:
@@ -349,14 +349,17 @@ class ActiveLearning:
         # Return the gini: 1 - sum(p^2)
         return 1 - sum((item * item for item in list_of_p))
 
-    def write_to_file(self) -> None:
+    def write_to_file(self) -> str:
         self.unpreds[:, 1] = self.model.predict(self.unpreds[:, 3:])
         nptofile = np.append(self.preds, self.unpreds, axis=0)
         nptofile = nptofile[nptofile[:, 0].argsort()]
         # print(self.preds[:5, :])
+        output = fr"{self.data_file.split('.csv')[0]}_AL_predictionss.csv"
         names = np.array([self.datapd.columns])
-        np.savetxt(fr"{self.data_file.split('.csv')[0]}_AL_predictionss.csv",
+        np.savetxt(output,
                    np.append(names, nptofile, axis=0), delimiter=",", fmt='%s')
+
+        return output
 
     def testing(self, n_to_check: int | None = None) -> int:
         """Checks for overwriting based on randomized sampling. To avoid having to make them label the entire test set,
