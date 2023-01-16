@@ -138,10 +138,17 @@ class VideoLabeler:
                 </script>
             </head>
             <body>
-                <video id="{self.html_id}" width="500px" src="{video_file}" muted></video><br>
-                <script type="text/javascript">init_{self.html_id}()</script>
-                <button onclick="play_{self.html_id}()">Play</button>
-                <button onclick="pause_{self.html_id}()">Pause</button>
+                <div style="display:flex">
+                    <div style="flex:1">
+                        <video id="{self.html_id}" height="300px" src="{video_file}" muted></video><br>
+                        <script type="text/javascript">init_{self.html_id}()</script>
+                        <button onclick="play_{self.html_id}()">Play</button>
+                        <button onclick="pause_{self.html_id}()">Pause</button>
+                    </div>
+                    <div style="flex:1">
+                        <img src="Plots/plot_to_label.png" height="300">
+                    </div>
+                </div>
             </body>
         '''))
 
