@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from IPython.display import clear_output, display, HTML
 import time
 

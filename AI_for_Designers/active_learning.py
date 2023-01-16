@@ -1,6 +1,7 @@
-from Labeling.Videolabeler import VideoLabeler
+from __future__ import annotations
 
-import sys
+from AI_for_Designers.Videolabeler import VideoLabeler
+
 import pickle
 import random
 import numpy as np
@@ -16,7 +17,6 @@ from sklearn.metrics import accuracy_score
 from collections.abc import Sequence
 from typing import Any
 
-sys.path.append('../')
 
 
 class ActiveLearning:
