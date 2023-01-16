@@ -22,8 +22,8 @@ from typing import Any
 
 class ActiveLearning:
     def __init__(self, data_file: str, activity: str, labels: list[str], window_size: float):
-        self.preds = None
-        self.unpreds = None
+        self.preds: np.ndarray | None = None
+        self.unpreds: np.ndarray | None = None
 
         random.seed(42)
         # Get the data and store in datapd
@@ -63,7 +63,7 @@ class ActiveLearning:
         return set(range(self.X_pool.shape[0])).difference(set(self.labeled_ids))
 
     @staticmethod
-    def determine_model(max_depth: int = None):
+    def determine_model(max_depth: int | None = None) -> RandomForestClassifier:
         """return the selected model for this action classification
 
         Args:
@@ -75,7 +75,7 @@ class ActiveLearning:
            
         return RandomForestClassifier(max_depth=max_depth, criterion='gini')
 
-    def update_model(self):
+    def update_model(self) -> None:
         """This model determines the current average max depth of the trees in the random forest. If the depth has changed drastically since the last check we update the model"""
         # Determine the depth of the current model
         self.model.estimator_.max_depth
@@ -85,7 +85,7 @@ class ActiveLearning:
         self.model = self.determine_model(avg_depth)
 
     @staticmethod
-    def get_sensor_data(data_file: str):
+    def get_sensor_data(data_file: str) -> pd.DataFrame:
         """read and return the datafile from the given path
 
         Args:
@@ -96,7 +96,7 @@ class ActiveLearning:
         """        
         return pd.read_csv(data_file)
 
-    def split_pool_test(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def split_pool_test(self) -> list[pd.DataFrame]:
         """splits a dataset into a pool and a test set
 
         Returns:
@@ -213,7 +213,7 @@ class ActiveLearning:
             n_samples (int): _description_
         """        
         # Amount of clusters that we expect
-        n_clusters = len(self.labels)
+        n_clusters = int(len(self.labels) * 1.5) + 1
         # Determine the means
         kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(self.unpreds[:, 3:])
         cert_indices = []
@@ -286,7 +286,7 @@ class ActiveLearning:
         # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
         # Print PCA
-        self.print_predition_point(get_id_to_label)
+        self.print_prediction_point(get_id_to_label)
         # Get what label this ID is supposed to get
         # Just for testing, add les_probs as arg to les_probs if you want these to be printed
         new_label = self.identify(get_id_to_label,
@@ -305,6 +305,11 @@ class ActiveLearning:
             self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == get_id_to_label)[0][0], 0)
             if get_id_to_label in self.unpreds[:, 1]:
                 raise ValueError('you did an oopsie')
+
+            if self.html_id > 0:
+                os.remove(f'Plots/plot_to_label_{self.html_id - 1}.png')
+            self.html_id += 1
+            
             # Return the label and the margin
             return get_id_to_label, margin
 
@@ -349,9 +354,9 @@ class ActiveLearning:
         # print(id)
         # print(video_file)
         if les_probs is None:
-            return self.vid.labeling(video_file, timestamp, self.window_size, process=process)
+            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, process=process)
         else:
-            return self.vid.labeling(video_file, timestamp, self.window_size, les_probs, process=process)
+            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, les_probs, process=process)
 
         # return input(f'FOR TESTING: enter the selected label, id = {id}\n')
 
@@ -485,30 +490,40 @@ class ActiveLearning:
         self.pca = np.array(pca.fit_transform(self.datapd.iloc[:, 3:]))
         self.pca = np.append(np.array([[i for i in range(len(self.datapd))]]).reshape(-1, 1), self.pca, axis=1)
 
-    def print_predition_point(self, current_id: int):
+    def print_prediction_point(self, current_id: int):
         """Creates a file with a plot of the data and the current prediction point
 
         Args:
             current_id (int): ID of the current prediction point
-        """        
-        ids = self.labeled_ids
-        ids.sort()
+        """       
+        plt.clf()
         plt.scatter(self.pca[:, 1], self.pca[:, 2], c='grey')
+        plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x', label='current')
         for label in self.labels:
             # Pandas made me do it. Fuck pandas
-            lst = list(self.datapd.loc[self.datapd['label'] == label].iloc[:, 0])
-            temp_pca = [[]]
+            # lst = list(self.datapd.loc[self.datapd['label'] == label].iloc[:, 0])
+            # print(np.where(self.preds[:, 1] == label))
+            lst = self.preds[np.where(self.preds[:, 1] == label)[0], :]
+            lst = lst[:, 0].tolist()
+            # print(lst)
+            temp_pca = []
             for e in self.pca:
-                if e[0] in lst:
-                    temp_pca.append(e)
-            plt.scatter(temp_pca[:, 1], temp_pca[:, 2], label=label)
-        # plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x')
+                # print(int(e[0]), type(e.tolist()), int(e[0]) in lst)
+                if int(e[0]) in lst:
+                    print(e)
+                    temp_pca.append(e[1:].tolist())
+            # print(temp_pca, '\n')
+
+            x = []
+            y = []
+            for i in range(len(temp_pca)):
+                x.append(temp_pca[i][0])
+                y.append(temp_pca[i][1])
+            plt.scatter(x, y, label=label)
         plt.legend()
 
-        plt.savefig(f'Plots/plot_to_label.png')
-        # plt.savefig(f'Plots/plot_to_label_{self.html_id}.png')
-        # if self.html_id > 0:
-        #     os.remove(f'Plots/plot_to_label_{self.html_id - 1}.png')
+        # plt.savefig(f'Plots/plot_to_label.png')
+        plt.savefig(f'Plots/plot_to_label_{self.html_id}.png')
         # self.html_id += 1
 
 

@@ -10,7 +10,7 @@ class VideoLabeler:
         self.labels = list(labels)
         self.html_id = 0
 
-    def labeling(self, video_file: str, timestamp: float, window_size: float, probs: Collection = None, process: str = '') -> str:
+    def labeling(self, video_file: str, timestamp: float, window_size: float, fig_id: int, probs: Collection = None, process: str = '') -> str:
         """Function to label a window in a given video at a given timestamp
 
         Args:
@@ -28,10 +28,10 @@ class VideoLabeler:
         # Making sure that the cell is empty by waiting some time
         # time.sleep(0.1)
         # Show and play the video
-        self.display_html(video_file, timestamp, window_size)
+        self.display_html(video_file, timestamp, window_size, fig_id)
         # Making sure that the cell is empty by waiting some time
 
-        time.sleep(0.8)
+        time.sleep(0.3)
         if process:
             print(process)
         if probs is not None:
@@ -91,7 +91,7 @@ class VideoLabeler:
                 else:
                     print('Label does not exist! Try again')
 
-    def display_html(self, video_file: str, timestamp: float, window_size: float) -> None:
+    def display_html(self, video_file: str, timestamp: float, window_size: float, fig_id: int) -> None:
         """Function to display the video in the output cell. The video starts automatically at the timestamp,
         plays for window_size seconds and then goes back to the timestamp to loop.
 
@@ -149,7 +149,7 @@ class VideoLabeler:
                         <button onclick="pause_{self.html_id}()">Pause</button>
                     </div>
                     <div style="flex:1">
-                        <img src="Plots/plot_to_label.png" height="300"></img>
+                        <img src="Plots/plot_to_label_{fig_id}.png" alt="{fig_id}" height="300"></img>
                     </div>
                 </div>
             </body>
