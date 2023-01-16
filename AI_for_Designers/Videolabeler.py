@@ -149,7 +149,7 @@ class VideoLabeler:
                         <button onclick="pause_{self.html_id}()">Pause</button>
                     </div>
                     <div style="flex:1">
-                        <img src="Plots/plot_to_label_{self.html_id}.png" height="300"></img>
+                        <img src="Plots/plot_to_label.png" height="300"></img>
                     </div>
                 </div>
             </body>

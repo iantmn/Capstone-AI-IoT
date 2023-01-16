@@ -286,7 +286,7 @@ class ActiveLearning:
         # Add it to the IDs that we have labeled
         self.labeled_ids.append(get_id_to_label)
         # Print PCA
-        # self.print_predition_point(get_id_to_label)
+        self.print_predition_point(get_id_to_label)
         # Get what label this ID is supposed to get
         # Just for testing, add les_probs as arg to les_probs if you want these to be printed
         new_label = self.identify(get_id_to_label,
@@ -308,11 +308,7 @@ class ActiveLearning:
             # Return the label and the margin
             return get_id_to_label, margin
 
-<<<<<<< HEAD
     def identify(self, id, les_probs=None, process: str = ''):
-        """This function will call the identification system from Gijs en Timo, for now it has been automated"""
-=======
-    def identify(self, id, les_probs=None):
         """This function will call the identification system from Gijs en Timo, for now it has been automated
 
         Args:
@@ -322,7 +318,6 @@ class ActiveLearning:
         Returns:
             object: _description_
         """        
->>>>>>> 0246abe1f361d859ab1959da058fa05e8e7efb3c
         # time.sleep(0.2)
         # print(id)
         # if les_probs is not None:
@@ -499,24 +494,28 @@ class ActiveLearning:
         ids = self.labeled_ids
         ids.sort()
         plt.scatter(self.pca[:, 1], self.pca[:, 2], c='grey')
-        for e in ids:
-            plt.scatter(self.pca[e, 1], self.pca[e, 2], c='blue')
-        plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x')
+        for label in self.labels:
+            # Pandas made me do it. Fuck pandas
+            lst = list(self.datapd.loc[self.datapd['label'] == label].iloc[:, 0])
+            temp_pca = [[]]
+            for e in self.pca:
+                if e[0] in lst:
+                    temp_pca.append(e)
+            plt.scatter(temp_pca[:, 1], temp_pca[:, 2], label=label)
+        # plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x')
+        plt.legend()
 
-        plt.savefig(f'Plots/plot_to_label_{self.html_id}.png')
-        if self.html_id > 0:
-            os.remove(f'Plots/plot_to_label_{self.html_id - 1}.png')
-        self.html_id += 1
+        plt.savefig(f'Plots/plot_to_label.png')
+        # plt.savefig(f'Plots/plot_to_label_{self.html_id}.png')
+        # if self.html_id > 0:
+        #     os.remove(f'Plots/plot_to_label_{self.html_id - 1}.png')
+        # self.html_id += 1
 
 
     def plotting(self) -> None:
-<<<<<<< HEAD
-        # Plot the gini index, the margin and the test accuracy on every iteration
-        plt.clf()
-=======
         """Plot the gini index, the margin and the test accuracy on every iteration
         """        
->>>>>>> 0246abe1f361d859ab1959da058fa05e8e7efb3c
+        plt.clf()
         plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
         plt.xlabel('Iterations [n]')
         plt.ylabel('Magnitude')
