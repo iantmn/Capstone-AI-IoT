@@ -498,7 +498,7 @@ class ActiveLearning:
         """       
         plt.clf()
         plt.scatter(self.pca[:, 1], self.pca[:, 2], c='grey')
-        plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x', label='current')
+        plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x', label='current', s=150)
         for label in self.labels:
             # Pandas made me do it. Fuck pandas
             # lst = list(self.datapd.loc[self.datapd['label'] == label].iloc[:, 0])
