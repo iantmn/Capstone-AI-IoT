@@ -4,13 +4,14 @@ const gpmfExtract = require('gpmf-extract');
 const goproTelemetry = require(`gopro-telemetry`);
 const fs = require('fs');
 
-const file = fs.readFileSync('C:/Users/gijsl/Downloads/Ian_stofzuigen/voorkamer_tapijt.mp4');
+const file = fs.readFileSync('D:/Sequence 01.MP4');
+
 
 
 gpmfExtract(file)
   .then(extracted => {
     goproTelemetry(extracted, {}, telemetry => {
-      fs.writeFileSync('output_path_voorkamer_tapijt.json', JSON.stringify(telemetry));
+      fs.writeFileSync('Timo_fietsen_GH010031.json', JSON.stringify(telemetry));
       console.log('Telemetry saved as JSON');
     });
   })
