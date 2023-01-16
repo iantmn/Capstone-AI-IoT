@@ -63,8 +63,16 @@ class ActiveLearning:
         return set(range(self.X_pool.shape[0])).difference(set(self.labeled_ids))
 
     @staticmethod
-    def determine_model(max_depth=None):
-        """return the selected model for this action classification"""
+    def determine_model(max_depth: int = None):
+        """return the selected model for this action classification
+
+        Args:
+            max_depth (int, optional): Maximum depth of the chosen model. Defaults to None.
+
+        Returns:
+            Object: Returns the model that we want to use for this action classification
+        """     
+           
         return RandomForestClassifier(max_depth=max_depth, criterion='gini')
 
     def update_model(self):
@@ -78,10 +86,22 @@ class ActiveLearning:
 
     @staticmethod
     def get_sensor_data(data_file: str):
-        """read and return the datafile from the given path"""
+        """read and return the datafile from the given path
+
+        Args:
+            data_file (str): location of the datafile (csv)
+
+        Returns:
+            pd.dataframe: pd dataframe of the datafile
+        """        
         return pd.read_csv(data_file)
 
     def split_pool_test(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """splits a dataset into a pool and a test set
+
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: returns the X_pool, X_test, y_pool, y_test
+        """        
         # Parameters for the split
         random_state = 42
         test_size = 0.2
@@ -90,7 +110,12 @@ class ActiveLearning:
 
     def training(self, maximum_iterations, random_points: int = 3, cluster_points: int = 1) -> None:
         """the process of training the datapoints, first set starting points, then iterate until you have a certainty
-        """
+
+        Args:
+            maximum_iterations (_type_): Maximum amount of iterations
+            random_points (int, optional): Number of random starting points. Defaults to 3.
+            cluster_points (int, optional): Number of clustered starting points. Defaults to 1.
+        """     
 
         # Set randomized starting points       
         self.set_starting_points(random_points)
@@ -113,7 +138,11 @@ class ActiveLearning:
 
     def set_starting_points(self, n_samples: int) -> None:
         """Generates training set by selecting random starting points, labeling them, and checking if there's an
-        instance of every activity"""
+        instance of every activity
+
+        Args:
+            n_samples (int): _description_
+        """              
 
         # Keep track of what activities we have labeled already
         seen_activities = []  # list of strings
@@ -178,6 +207,11 @@ class ActiveLearning:
         # self.datapd.to_csv('test3.csv')
 
     def clustered_starting_points(self, n_samples: int) -> None:
+        """_summary_
+
+        Args:
+            n_samples (int): _description_
+        """        
         # Amount of clusters that we expect
         n_clusters = len(self.labels)
         # Determine the means
@@ -214,6 +248,11 @@ class ActiveLearning:
                 self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == e), 0)
 
     def iterate(self, max_iter: int) -> None:
+        """This function is the iterative process of active learning. Labeling the most ambiguous points
+
+        Args:
+            max_iter (int): maximum number of iterations
+        """        
         # This function is the iterative process of active learning. Labeling the most ambiguous points
         iter_num = 0
         while True:
@@ -234,7 +273,14 @@ class ActiveLearning:
             #                  "improving, or S if you are satisfied with this models' performance")
 
     def set_ambiguous_point(self) -> tuple[int, int]:
-        """Lets designer label ambiguous point"""
+        """Lets designer label ambiguous point
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            tuple[int, int]: _description_
+        """        
         # Determine the ID of the most ambiguous datapoint      
         get_id_to_label, margin, les_probs = self.find_most_ambiguous_id()
         # Add it to the IDs that we have labeled
@@ -262,8 +308,21 @@ class ActiveLearning:
             # Return the label and the margin
             return get_id_to_label, margin
 
+<<<<<<< HEAD
     def identify(self, id, les_probs=None, process: str = ''):
         """This function will call the identification system from Gijs en Timo, for now it has been automated"""
+=======
+    def identify(self, id, les_probs=None):
+        """This function will call the identification system from Gijs en Timo, for now it has been automated
+
+        Args:
+            id (int): _description_
+            les_probs (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            object: _description_
+        """        
+>>>>>>> 0246abe1f361d859ab1959da058fa05e8e7efb3c
         # time.sleep(0.2)
         # print(id)
         # if les_probs is not None:
@@ -304,7 +363,14 @@ class ActiveLearning:
     def find_most_ambiguous_id(self) -> tuple[int, int | Any, Any]:
         """Finds the most ambiguous sample. The unlabeled sample with the greatest
             difference between most and second most probably classes is the most ambiguous.
-            Returns only the id of this sample"""
+            Returns only the id of this sample
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            tuple[int, int | Any, Any]: returns the id of the most ambiguous sample, the margin and the probabilities
+        """        
         try:
             # Fit the model with the datapoints that we have currently labeled.
             self.model.fit(self.preds[:, 3:], self.preds[:, 1])
@@ -348,6 +414,14 @@ class ActiveLearning:
 
     @staticmethod
     def gini_impurity_index(list_of_p) -> float:
+        """returns the gini: 1 - sum(p^2)
+
+        Args:
+            list_of_p (_type_): _description_
+
+        Returns:
+            float: The gini impurity index
+        """        
         # Return the gini: 1 - sum(p^2)
         return 1 - sum((item * item for item in list_of_p))
 
@@ -365,7 +439,14 @@ class ActiveLearning:
 
     def testing(self, n_to_check: int | None = None) -> int:
         """Checks for overwriting based on randomized sampling. To avoid having to make them label the entire test set,
-        we ask the designer to confirm n predicted test labels"""
+        we ask the designer to confirm n predicted test labels
+
+        Args:
+            n_to_check (int | None, optional): _description_. Defaults to None.
+
+        Returns:
+            int: error_count and n_to_check
+        """       
         
         # TODO improve:
         if n_to_check is None or n_to_check > len(self.X_test):
@@ -394,15 +475,27 @@ class ActiveLearning:
         return error_count, n_to_check
 
     def remove_row(self, id: int) -> None:
+        """Removes a row from the data
+
+        Args:
+            id (int): id of the row to be removed
+        """        
         self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == id)[0][0], 0)
         self.datapd.drop(id, 0)
 
     def determine_pca(self):
+        """Calculates and saves the pca of the data in self.pca
+        """        
         pca = PCA(n_components=2, svd_solver='auto')
         self.pca = np.array(pca.fit_transform(self.datapd.iloc[:, 3:]))
         self.pca = np.append(np.array([[i for i in range(len(self.datapd))]]).reshape(-1, 1), self.pca, axis=1)
 
-    def print_predition_point(self, current_id):
+    def print_predition_point(self, current_id: int):
+        """Creates a file with a plot of the data and the current prediction point
+
+        Args:
+            current_id (int): ID of the current prediction point
+        """        
         ids = self.labeled_ids
         ids.sort()
         plt.scatter(self.pca[:, 1], self.pca[:, 2], c='grey')
@@ -417,8 +510,13 @@ class ActiveLearning:
 
 
     def plotting(self) -> None:
+<<<<<<< HEAD
         # Plot the gini index, the margin and the test accuracy on every iteration
         plt.clf()
+=======
+        """Plot the gini index, the margin and the test accuracy on every iteration
+        """        
+>>>>>>> 0246abe1f361d859ab1959da058fa05e8e7efb3c
         plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
         plt.xlabel('Iterations [n]')
         plt.ylabel('Magnitude')
