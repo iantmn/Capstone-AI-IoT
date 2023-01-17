@@ -137,7 +137,7 @@ class ActiveLearning:
         # Write to csv file
         # self.write_to_file()
 
-        with open(fr'Models/model_{self.action_ID}_{maximum_iterations}.txt', 'wb') as f:
+        with open(fr'Models/model_{self.action_ID}_{maximum_iterations}.pickle', 'wb') as f:
             pickle.dump(self.model, f)
 
     def set_starting_points(self, n_samples: int) -> None:

@@ -85,6 +85,7 @@ class Stats:
 
         print(colors)
 
+        print(df.columns)
         for label, label_df in df.groupby('label'):
             fig.add_bar(x=label_df.duration,
                         y=label_df.label,
