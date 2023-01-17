@@ -15,9 +15,9 @@ def amount_of_samples(data_file: str) -> int:
     Returns:
         int: amount of samples that can be used for training the model
     """
+
     max_id = 0
     with open(data_file) as f:
-        f.readline()
         for line in f:
             if line != '':
                 max_id = int(line.strip().split(',')[2])

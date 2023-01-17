@@ -499,7 +499,7 @@ class Preprocessing:
                                             not_finished = False
                                             # print('It stopped at gyro data', timestamp_list)
                                             break
-                                        elif float(line[0]) > last_point - stop_offset + offset:
+                                        elif float(line_b[0]) > last_point - stop_offset + offset:
                                             not_finished = False
                                             # print('it stopped at gyro data', last_point - stop_offset, prev_window_b[-1], line_b[0], timestamp_list)
                                             break

@@ -78,7 +78,7 @@ class ActiveLearning:
     def update_model(self) -> None:
         """This model determines the current average max depth of the trees in the random forest. If the depth has changed drastically since the last check we update the model"""
         # Determine the depth of the current model
-        self.model.estimator_.max_depth
+        # self.model.estimators_.max_depth
         forest = self.determine_model().fit(self.preds)
         avg_depth = sum(estimator.tree_.max_depth for estimator in forest.estimators_)/100
         print(avg_depth)
@@ -127,6 +127,10 @@ class ActiveLearning:
 
         self.clustered_starting_points(cluster_points)
         # pd.to_csv('hello?', self.datapd)
+
+        # self.update_model()
+        # TODO: write to csv file, this doesn't work yet :(
+        # np.savetxt("test_indices.csv", self.preds, delimiter=",")
 
         # Set the most ambiguous points iteratively
         self.iterate(maximum_iterations)
@@ -238,6 +242,9 @@ class ActiveLearning:
             if got_labeled == 'x':
                 self.remove_row(e)
             else:
+                # TODO new labels add
+                if got_labeled not in self.labels:
+                    self.labels.append(got_labeled)
                 # print(np.where(self.X_pool.iloc[:, 0] == e)[0][0])
                 line = self.X_pool.iloc[np.where(self.X_pool.iloc[:, 0] == e)[0][0], :].copy()
                 # print(line)
@@ -295,6 +302,8 @@ class ActiveLearning:
             self.remove_row(get_id_to_label)
             return get_id_to_label, 0
         else:
+            if new_label not in self.labels:
+                self.labels.append(new_label)
             # Extract the row from the unpredicted array
             t = self.unpreds[self.unpreds[:, 0] == get_id_to_label, :]
             # Label the row
@@ -366,7 +375,7 @@ class ActiveLearning:
             Returns only the id of this sample
 
         Raises:
-            ValueError: _description_
+            ValueError: Exception for testing purposes
 
         Returns:
             tuple[int, int | Any, Any]: returns the id of the most ambiguous sample, the margin and the probabilities

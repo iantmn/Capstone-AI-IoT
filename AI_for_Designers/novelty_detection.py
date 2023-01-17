@@ -41,6 +41,7 @@ class NoveltyDetection():
         # print(self.datapd)
         for id in ids:
             with open(self.data_file) as f:
+                f.readline()
                 for _ in range(id):
                     f.readline()
                 splitted = f.readline().strip().split(',')
@@ -67,8 +68,8 @@ class NoveltyDetection():
         """
 
         # TODO difference in start recording data and recording video. This works for the walking case...
-        for time_vid in time_video:
-            time_vid[0] += 2.5
+        # for time_vid in time_video:
+        #     time_vid[0] += 2.5
             
         # Function to display HTML code  
         display(HTML(f'''

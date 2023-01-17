@@ -102,7 +102,7 @@ class VideoLabeler:
         """
 
         # TODO difference in start recording data and recording video. This works for the walking case...
-        timestamp += 2.5
+        # timestamp += 2.5
         print(timestamp, window_size)
         # Function to display HTML code  
         display(HTML(f'''
