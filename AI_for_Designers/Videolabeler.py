@@ -40,7 +40,7 @@ class VideoLabeler:
         # Selecting the label:
         while True:
             # Printing the prompt
-            print(f"Enter the index or the name of one of the following labels. Enter 'n' to add a new label:")
+            print(f"Enter the index or the name of one of the following labels. Enter 'n' to add a new label or 'x' to discard this sample:")
             for i, label in enumerate(self.labels):
                 print(f'{i + 1}. {label}')
             # Get the input from the user
