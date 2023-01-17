@@ -109,7 +109,7 @@ if do_kmeans:
 
     print("Training KMeans...")
     start_time = time.perf_counter()
-    model = KMeans(n_clusters=n_clusters)
+    model = KMeans(n_clusters=n_clusters, n_init=10)
     model.fit(x_train)
     label = model.labels_
     # print(label)
@@ -297,6 +297,7 @@ if do_dt:
     
     fig = plt.figure(figsize=(25,20))
     plot_tree(dt, filled=True)
+    plt.show()
 
 
     print(f"dt accuracy: {accuracy_train=}, {accuracy_test=}")
@@ -309,7 +310,7 @@ if do_bagged_class:
     start_time = time.perf_counter()
     chosen = SVC()
     num_models = 100
-    model = BaggingClassifier(base_estimator=chosen, n_estimators=num_models, random_state=42)
+    model = BaggingClassifier(estimator=chosen, n_estimators=num_models, random_state=42)
     
     model.fit(x_train, y_train)
     y_pred_train = model.predict(x_train)
