@@ -83,9 +83,9 @@ class Stats:
         for i in range(len(self.labels)):
             colors[self.labels[i]] = color_list[i]
 
-        print(colors)
+        # print(colors)
 
-        print(df.columns)
+        # print(df.columns)
         for label, label_df in df.groupby('label'):
             fig.add_bar(x=label_df.duration,
                         y=label_df.label,
