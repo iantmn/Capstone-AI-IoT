@@ -108,7 +108,7 @@ class ActiveLearning:
         # return to X_pool, X_test, y_pool, y_test
         return train_test_split(self.datapd, self.datapd['label'], test_size=test_size, random_state=random_state)
 
-    def training(self, maximum_iterations, random_points: int = 3, cluster_points: int = 1) -> None:
+    def training(self, maximum_iterations, random_points: int = 3, cluster_points: int = 1) -> list[str]:
         """the process of training the datapoints, first set starting points, then iterate until you have a certainty
 
         Args:
@@ -139,6 +139,8 @@ class ActiveLearning:
 
         with open(fr'Models/model_{self.action_ID}_{maximum_iterations}.pickle', 'wb') as f:
             pickle.dump(self.model, f)
+
+        return self.labels
 
     def set_starting_points(self, n_samples: int) -> None:
         """Generates training set by selecting random starting points, labeling them, and checking if there's an
