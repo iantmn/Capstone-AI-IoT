@@ -58,9 +58,8 @@ class ActiveLearning:
 
     @property
     def unlabeled_ids(self):
-        """We make a property so that when the list of labeled_ids changes we don't have to worry about changing this one.
-        TODO: stash the set"""
-        return set(range(self.X_pool.shape[0])).difference(set(self.labeled_ids))
+        """We make a property so that when the list of labeled_ids changes we don't have to worry about changing this one."""
+        return set(range(self.X_pool.shape[0])) - set(self.labeled_ids)
 
     @staticmethod
     def determine_model(max_depth: int | None = None) -> RandomForestClassifier:
@@ -79,8 +78,8 @@ class ActiveLearning:
         """This model determines the current average max depth of the trees in the random forest. If the depth has changed drastically since the last check we update the model"""
         # Determine the depth of the current model
         # self.model.estimators_.max_depth
-        forest = self.determine_model().fit(self.preds)
-        avg_depth = sum(estimator.tree_.max_depth for estimator in forest.estimators_)/100
+        forest = self.determine_model().fit(self.preds[:, 3:], self.preds[:, 1])
+        avg_depth = sum(estimator.tree_.max_depth for estimator in forest.estimators_)//100+1
         print(avg_depth)
         self.model = self.determine_model(avg_depth)
 
@@ -128,7 +127,7 @@ class ActiveLearning:
         self.clustered_starting_points(cluster_points)
         # pd.to_csv('hello?', self.datapd)
 
-        # self.update_model()
+        self.update_model()
         # TODO: write to csv file, this doesn't work yet :(
         # np.savetxt("test_indices.csv", self.preds, delimiter=",")
 
@@ -140,6 +139,13 @@ class ActiveLearning:
         with open(fr'Models/model_{self.action_ID}_{maximum_iterations}.pickle', 'wb') as f:
             pickle.dump(self.model, f)
 
+        directory = r'Plots'
+        for filename in os.listdir(directory):
+            f = os.path.join(directory, filename)
+            if os.path.isfile(f):
+                if 'plot_to_label' in f:
+                    os.remove(f)
+
         return self.labels
 
     def set_starting_points(self, n_samples: int) -> None:
@@ -148,8 +154,7 @@ class ActiveLearning:
 
         Args:
             n_samples (int): _description_
-        """              
-
+        """             
         # Keep track of what activities we have labeled already
         seen_activities = []  # list of strings
         # Amount of datapoints that we randomly sample
@@ -244,7 +249,6 @@ class ActiveLearning:
             if got_labeled == 'x':
                 self.remove_row(e)
             else:
-                # TODO new labels add
                 if got_labeled not in self.labels:
                     self.labels.append(got_labeled)
                 # print(np.where(self.X_pool.iloc[:, 0] == e)[0][0])
@@ -274,12 +278,6 @@ class ActiveLearning:
             # TODO: Investigate margin or gini at which you have a good accuracy
             if iter_num >= max_iter or margin > 0.15:
                 break
-
-            # TODO: Sophie dit is jou idee idk wat je hiermee van plan was
-            # show designer plot and performance: ask if they want to stop, continue, or retrain on new samples
-            # self.plot_model(f'Iteration {iter_num}', new_index = new_index)
-            # question = input("Examine the plot. Enter C if you want to continue, R if your performance is not "
-            #                  "improving, or S if you are satisfied with this models' performance")
 
     def set_ambiguous_point(self) -> tuple[int, int]:
         """Lets designer label ambiguous point
@@ -360,14 +358,15 @@ class ActiveLearning:
                 split = line.strip().split(',')
                 if int(split[1]) <= id <= int(split[2]):
                     video_file = split[3]
+                    video_offset = float(split[4])
                     break
 
         # print(id)
         # print(video_file)
         if les_probs is None:
-            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, process=process)
+            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, process=process, video_offset=video_offset)
         else:
-            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, les_probs, process=process)
+            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, les_probs, process=process, video_offset=video_offset)
 
         # return input(f'FOR TESTING: enter the selected label, id = {id}\n')
 

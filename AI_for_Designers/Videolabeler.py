@@ -10,7 +10,7 @@ class VideoLabeler:
         self.labels = list(labels)
         self.html_id = 0
 
-    def labeling(self, video_file: str, timestamp: float, window_size: float, fig_id: int, probs: Collection = None, process: str = '') -> str:
+    def labeling(self, video_file: str, timestamp: float, window_size: float, fig_id: int, probs: Collection = None, process: str = '', video_offset: float = 0) -> str:
         """Function to label a window in a given video at a given timestamp
 
         Args:
@@ -28,7 +28,7 @@ class VideoLabeler:
         # Making sure that the cell is empty by waiting some time
         # time.sleep(0.1)
         # Show and play the video
-        self.display_html(video_file, timestamp, window_size, fig_id)
+        self.display_html(video_file, timestamp, window_size, fig_id, video_offset)
         # Making sure that the cell is empty by waiting some time
 
         time.sleep(0.3)
@@ -91,7 +91,7 @@ class VideoLabeler:
                 else:
                     print('Label does not exist! Try again')
 
-    def display_html(self, video_file: str, timestamp: float, window_size: float, fig_id: int) -> None:
+    def display_html(self, video_file: str, timestamp: float, window_size: float, fig_id: int, video_offset) -> None:
         """Function to display the video in the output cell. The video starts automatically at the timestamp,
         plays for window_size seconds and then goes back to the timestamp to loop.
 
@@ -99,10 +99,10 @@ class VideoLabeler:
             video_file (str): relative file-location to the video file.
             timestamp (float): starting point of the window, seen from the start of the video in seconds.
             window_size (float): length of the window in seconds.
+            video_offset (float): time in seconds that the video start before the start of the data. Defaults to 0.
         """
 
-        # TODO difference in start recording data and recording video. This works for the walking case...
-        # timestamp += 2.5
+        timestamp += video_offset
         print(timestamp, window_size)
         # Function to display HTML code  
         display(HTML(f'''

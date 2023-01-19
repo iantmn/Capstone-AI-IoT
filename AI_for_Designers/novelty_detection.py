@@ -67,9 +67,14 @@ class NoveltyDetection():
             window_size (float): length of the window in seconds.
         """
 
-        # TODO difference in start recording data and recording video. This works for the walking case...
-        # for time_vid in time_video:
-        #     time_vid[0] += 2.5
+        video_offset = {}
+        with open(self.processed_data_files) as f:
+            for line in f:
+                split = line.strip().split(',')
+                video_offset[split[3]] = float(split[4])
+
+        for time_vid in time_video:
+            time_vid[0] += video_offset[time_vid]
             
         # Function to display HTML code  
         display(HTML(f'''

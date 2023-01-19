@@ -147,7 +147,7 @@ class Preprocessing:
         return peaks
 
     @staticmethod
-    def get_sampling_frequency(input_file: str, start_offset: float = 0, stop_offset: float = 0, size: float = 2) -> \
+    def get_sampling_frequency(input_file: str, start_offset: float = 0, stop_offset: float = 0, size: float = 2, skip_n_lines_at_start: int = 0) -> \
             tuple[float, float, float]:
         """Retrieving the sampling frequency from the timestamps from the input file
 
@@ -156,6 +156,8 @@ class Preprocessing:
             start_offset (float, optional): Skip the first r seconds of the data. Defaults to 0.
             stop_offset (float, optional): Skip the last r seconds of the data. Defaults to 0.
             size(float, optional): Size of the window in seconds. Defaults to 2.
+            skip_n_lines_at_start (int, optional): Skip the first n lines at the start of the data file. Some times the first
+            few lines contain no data. These lines should be skipped. Defaults to 0.
 
         Returns:
             tuple[float, float, float]: Returns the sampling frequency, the last timestamp and the window size
@@ -165,8 +167,8 @@ class Preprocessing:
             # Check the file extension
             file_extension = input_file.split('.')[-1]
             if file_extension == 'txt':
-                # Skip the header lines #TODO make general?
-                for _ in range(0):
+                # Skip the header lines
+                for _ in range(skip_n_lines_at_start):
                     f.readline()
             elif file_extension == 'csv':
                 # Skip the header lines, and the first line
@@ -194,8 +196,8 @@ class Preprocessing:
 
     def windowing(self, input_file: str | list[str], video_file: str = '', label: str = '',
                   start_offset: float = 0, stop_offset: float = 0,
-                  size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3,
-                  epsilon: float = 0.1, do_plot: bool = False, do_scale=False) -> None:
+                  size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3, video_offset: float = 0,
+                  epsilon: float = 0.1, skip_n_lines_at_start: int = 0, do_plot: bool = False, do_scale=False) -> None:
         """
         Function for making windows of a certain size, with an offset. A window is made and the features of the window
         are extracted. The window is slided the offset amount of seconds to the right and new window is made and
@@ -216,7 +218,10 @@ class Preprocessing:
             offset (float, optional): Size of the offset in seconds. Defaults to 0.2.
             start (int, optional): Start column from the data file. Defaults to 1.
             stop (int, optional): Last column (including) of the data file. Defaults to 3.
+            video_offset (float, optional): time in seconds that the video start before the start of the data. Defaults to 0.
             epsilon (float, optional): Variable for the fourier function. Defaults to 0.1.
+            skip_n_lines_at_start (int, optional): Skip the first n lines at the start of the data file. Some times the first
+            few lines contain no data. These lines should be skipped. Defaults to 0.
             do_plot (bool, optional): Set to true when a plot of every window is wanted. Defaults to False.
             do_scale (bool, optional): Set to true when scaling is wanted. All the features in the feature file wil be
             scaled. ATTENTION! Only set to true, when the last data is added. Otherwise, the previous files will get
@@ -246,7 +251,6 @@ class Preprocessing:
 
         # Counter for keeping the timestamps comparable with the timestamps list.
         # This list is used when writing to the file to know when a window starts.
-        timestamp_counter = 0
         timestamp_list: list[float] = []
 
         # check if the file that we want to extract the data from has already been used in this action_ID
@@ -254,7 +258,7 @@ class Preprocessing:
         try:
             with open(fr'Preprocessed-data/{self.action_ID}/processed_data_files.txt') as f:
                 for line in f:
-                    if line.strip() == input_file_a:
+                    if line.strip().split(',')[0] == input_file_a:
                         already_processed = True
                         break
         except FileNotFoundError:
@@ -327,8 +331,6 @@ class Preprocessing:
 
             # Amount of samples per window
             samples_window = int(size_a * sampling_frequency) + 1  # Ceil
-            # Amount of samples in the offset
-            samples_offset = int(offset * sampling_frequency) + 1
 
             # Do the same for gyroscope and call it 'b'
             if input_file_b != '':
@@ -338,7 +340,6 @@ class Preprocessing:
                 current_window_b: list[list[float]] = []
                 
                 samples_window_b = int(size_b * sampling_frequency_b) + 1
-                samples_offset_b = int(offset * sampling_frequency_b) + 1 
 
             # When the end of a datafile is reached, this value is set to False and the loop is exited
             not_finished = True
@@ -351,10 +352,15 @@ class Preprocessing:
             # Opening the data file again and skipping the header lines.
             k = 0
             with open(input_file_a) as f:
+                for _ in range(skip_n_lines_at_start):
+                    f.readline()
                 # open file_b if it exists:
                 if input_file_b != '':
                     f_b = open(input_file_b)
+                    for _ in range(skip_n_lines_at_start):
+                        f_b.readline()
                 # print(start_offset, stop_offset, size_a)
+
                 line = f.readline().strip().split(',')
                 while float(line[0]) < start_offset:
                     line = f.readline().strip().split(',')
@@ -596,7 +602,7 @@ class Preprocessing:
                     # Writing the first and the last index and the relative path to the video to the output
                     # file with the files that are used.
                     with open(fr'Preprocessed-data/{self.action_ID}/processed_data_files.txt', 'a') as h:
-                        h.write(f",{last_index},{last_index + current_ID - 1},{video_file}\n")
+                        h.write(f",{last_index},{last_index + current_ID - 1},{video_file},{video_offset}\n")
                 if input_file_b != '':
                     f_b.close()
                 # print(len(print_timestamps), print_timestamps)
@@ -614,7 +620,7 @@ class Preprocessing:
 
     @staticmethod
     def plot_accelerometer(input_file: str, start_offset: float = 0, stop_offset: float = 0, start: int = 1,
-                           stop: int = 3) -> None:
+                           stop: int = 3, skip_n_lines_at_start: int = 0) -> None:
         """Function to plot the time-domain curves of data from an input-file
 
         Args:
@@ -623,6 +629,8 @@ class Preprocessing:
             stop_offset (float, optional): Skip the last r seconds of the data. Defaults to 0.
             start (int, optional): Start column from the data file. Defaults to 1.
             stop (int, optional): Last column (including) of the data file. Defaults to 3.
+            skip_n_lines_at_start (int, optional): Skip the first n lines at the start of the data file. Some times the first
+            few lines contain no data. These lines should be skipped. Defaults to 0.
 
         Raises:
             FileNotFoundError: Error raised if the given input-file cannot be found.
@@ -638,8 +646,8 @@ class Preprocessing:
             with open(input_file) as f:
                 # List with the datapoints, each row will have the data of one sensor
                 data: list[list[float]] = []
-                # Skip the first 4 lines (contains no data) + the amount of samples in the start_offset #TODO make general?
-                for _ in range(0 + int(start_offset * sampling_frequency)): f.readline()
+                # Skip the first 4 lines (contains no data) + the amount of samples in the start_offset
+                for _ in range(skip_n_lines_at_start + int(start_offset * sampling_frequency)): f.readline()
 
                 not_finished = True
                 while not_finished:
@@ -671,11 +679,13 @@ class Preprocessing:
         plt.show()
 
     @staticmethod
-    def get_time_stats(input_file: str) -> tuple[float, float, float, float]:
+    def get_time_stats(input_file: str, skip_n_lines_at_start: int = 0) -> tuple[float, float, float, float]:
         """Function to get some stats about the sampling period (average period, standard deviation, minimal and maximal period).
 
         Args:
             input_file (str): The relative path of the file with the data, seen from the main file.
+            skip_n_lines_at_start (int, optional): Skip the first n lines at the start of the data file. Some times the first
+            few lines contain no data. These lines should be skipped. Defaults to 0.
 
         Raises:
             FileNotFoundError: Error raised if the given input-file cannot be found.
@@ -688,8 +698,8 @@ class Preprocessing:
         try:
             # Try opening the file
             with open(input_file) as f:
-                # Read the first lines (does not contain data) # TODO make general?
-                for _ in range(0):
+                # Read the first lines (does not contain data)
+                for _ in range(skip_n_lines_at_start):
                     f.readline()
 
                 # Array with the periods
@@ -722,7 +732,6 @@ class Preprocessing:
         """Scale the features with their respective scale. All centroid, peak and total power are put on the same scale.
         By setting do_scale in windowing to True this function is called automatically, else build a object of
         Preprocessing in main and execute Preprocessing.SuperStandardScaler(path)
-        TODO: implement possibility to also use gyroscope data
 
         Args:
             input_file (str): input file where the unscaled features are stored
