@@ -37,6 +37,8 @@ class ActiveLearning:
         self.determine_pca()
         # Name of the activity
         self.action_ID = activity
+        # Last ID for redo button
+        self.lastID = 0
         # Argument is the set of labels that the user predicts
         self.labels = labels
         # A list of the ID's that we have labeled already
@@ -46,7 +48,7 @@ class ActiveLearning:
 
         self.vid = VideoLabeler(labels)
         self.window_size = window_size
-        self.html_id = 0
+        self.html_id = -1
 
         # X_pool is the dataset that we use for building the model. X_test is to test the model
         self.X_pool, self.X_test, self.y_pool, self.y_test = self.split_pool_test()
@@ -80,7 +82,7 @@ class ActiveLearning:
         # self.model.estimators_.max_depth
         forest = self.determine_model().fit(self.preds[:, 3:], self.preds[:, 1])
         avg_depth = sum(estimator.tree_.max_depth for estimator in forest.estimators_)//100+1
-        print(avg_depth)
+        # print(avg_depth)
         self.model = self.determine_model(avg_depth)
 
     @staticmethod
@@ -161,7 +163,7 @@ class ActiveLearning:
         range_var = n_samples * len(self.labels)
         # self.X_pool.to_csv('test.csv')
         # Generate random points
-        for i in range(range_var):
+        for _ in range(range_var):
             # Pick a random point from X_pool
             while True:
                 # Set a random id that is in the X_pool and has not yet been labeled
@@ -172,20 +174,30 @@ class ActiveLearning:
             # got_labeled = self.identify(self.datapd.iloc[random_id]['time'])
             got_labeled = self.identify(random_id)  # for testing
             if got_labeled == 'x':
-                print(np.where(self.datapd.iloc[:, 0] == random_id))
+                # print(np.where(self.datapd.iloc[:, 0] == random_id))
                 self.datapd.drop(random_id, 0)
                 self.X_pool.drop(random_id, 0)
             # If this label was not accounted for we add it to the set of labels
             else:
+                # Redo button:
+                if got_labeled == 'r':
+                    try:
+                        self.labeled_ids.pop(-1)
+                        got_labelded = self.identify(random_id)
+                    except IndexError:
+                        raise ValueError("You ain't nah removin' nottin")
+                    if got_labeled == 'x':
+                        continue
                 if got_labeled not in self.labels:
                     self.labels.append(got_labeled)
                 seen_activities.append(got_labeled)
                 # Add the ID to the list
                 self.labeled_ids.append(random_id)
+                self.lastID = random_id
 
         # The determined number of random points were executed. We now set random points as long as not all predicted
         # classes were found.
-        print('first stage is done!')
+        # print('first stage is done!')
 
         # keep adding points until every activity is in the training set
         # We added samples as the centre of each cluster so we don't really need this bit anymore
@@ -205,14 +217,14 @@ class ActiveLearning:
         #     seen_activities.append(got_labeled)
 
         # We have found a sample of all the labels that we expected
-        print('second stage is done!')
+        # print('second stage is done!')
         # Randomized phase is done
         # Give labels to the ID's in the pandaset
         # print(self.X_pool.iloc[0, :])
         # print(self.X_pool)
         # print(self.X_pool.iloc[self.labeled_ids[0], :])
         for i in range(len(self.labeled_ids)):
-            print(np.where(self.labeled_ids[i]), self.labeled_ids[i])
+            # print(np.where(self.labeled_ids[i]), self.labeled_ids[i])
             self.X_pool.at[self.labeled_ids[i], 'label'] = seen_activities[i]
         # self.X_pool.to_csv('test2.csv')
         # self.datapd.to_csv('test3.csv')
@@ -249,6 +261,15 @@ class ActiveLearning:
             if got_labeled == 'x':
                 self.remove_row(e)
             else:
+                if got_labeled == 'r':
+                    self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == e), 0)
+                    got_labeled = self.identify(e)
+
+                    if got_labeled == 'x':
+                        self.remove_row(e)
+                        continue
+                    elif got_labeled == 'r':
+                        raise ValueError('You sneaky foo. please stop trying to break our code. As punishment you shall be labeling from the start')
                 if got_labeled not in self.labels:
                     self.labels.append(got_labeled)
                 # print(np.where(self.X_pool.iloc[:, 0] == e)[0][0])
@@ -259,6 +280,7 @@ class ActiveLearning:
                 # print(line.shape, self.preds.shape)
                 self.preds = np.append(self.preds, line, axis=0)
                 self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == e), 0)
+                self.lastID = e
 
     def iterate(self, max_iter: int) -> None:
         """This function is the iterative process of active learning. Labeling the most ambiguous points
@@ -287,7 +309,9 @@ class ActiveLearning:
 
         Returns:
             tuple[int, int]: _description_
-        """        
+        """      
+
+        self.html_id += 1
         # Determine the ID of the most ambiguous datapoint      
         get_id_to_label, margin, les_probs = self.find_most_ambiguous_id()
         # Add it to the IDs that we have labeled
@@ -302,6 +326,17 @@ class ActiveLearning:
             self.remove_row(get_id_to_label)
             return get_id_to_label, 0
         else:
+            if new_label == 'r':
+                self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == get_id_to_label), 0)
+                new_label = self.identify(get_id_to_label,
+                                  les_probs=les_probs)
+
+                if new_label == 'x':
+                    self.remove_row(get_id_to_label)
+                    return get_id_to_label, 0
+                elif new_label == 'r':
+                    raise ValueError('You sneaky foo. please stop trying to break our code. As punishment you shall be labeling from the start')
+
             if new_label not in self.labels:
                 self.labels.append(new_label)
             # Extract the row from the unpredicted array
@@ -312,12 +347,13 @@ class ActiveLearning:
             self.preds = np.vstack((self.preds, t))
             # Delete it from the unpredicted array
             self.unpreds = np.delete(self.unpreds, np.where(self.unpreds[:, 0] == get_id_to_label)[0][0], 0)
+
+            self.lastID = get_id_to_label
             if get_id_to_label in self.unpreds[:, 1]:
                 raise ValueError('you did an oopsie')
 
             if self.html_id > 0:
                 os.remove(f'Plots/plot_to_label_{self.html_id - 1}.png')
-            self.html_id += 1
             
             # Return the label and the margin
             return get_id_to_label, margin
@@ -332,26 +368,7 @@ class ActiveLearning:
         Returns:
             object: _description_
         """        
-        # time.sleep(0.2)
-        # print(id)
-        # if les_probs is not None:
-        #     print(les_probs, les_probs.index(max(les_probs)))
-        # if 'old' in self.data_file or 'time_features' in self.data_file:
-        #     if id < 91:
-        #         return 'stairs_up'
-        #     elif id < 182:
-        #         return 'stairs_down'
-        #     else:
-        #         return 'walking' 
-        # else:
-        #     if id < 543:
-        #         return 'stairs_up'
-        #     elif id < 1177:
-        #         return 'stairs_down'
-        #     elif id < 1632:
-        #         return 'running'
-        #     else:
-        #         return 'walking'
+        
         timestamp = self.datapd.iloc[id, 2]
         with open(fr'Preprocessed-data/{self.action_ID}/processed_data_files.txt') as f:
             for line in f:
@@ -370,7 +387,7 @@ class ActiveLearning:
 
         # return input(f'FOR TESTING: enter the selected label, id = {id}\n')
 
-    def find_most_ambiguous_id(self) -> tuple[int, int | Any, Any]:
+    def find_most_ambiguous_id(self) -> tuple[int, int, list[float]]:
         """Finds the most ambiguous sample. The unlabeled sample with the greatest
             difference between most and second most probably classes is the most ambiguous.
             Returns only the id of this sample
@@ -410,6 +427,9 @@ class ActiveLearning:
 
             les_probs = self.model.predict_proba(
                 self.unpreds[np.where(self.unpreds[:, 0] == lowest_margin_sample_id)[0], 3:]).tolist()[0]
+            # les_probs= {}
+            # for i in range(len(probs)):
+            #     les_probs[self.labels]
 
             # Add the accuracy, this is only for a nice plot and can be deleted afterwards.
             # self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
@@ -447,7 +467,7 @@ class ActiveLearning:
 
         return output
 
-    def testing(self, n_to_check: int | None = None) -> int:
+    def testing(self, n_to_check: int | None = None) -> None:
         """Checks for overwriting based on randomized sampling. To avoid having to make them label the entire test set,
         we ask the designer to confirm n predicted test labels
 
@@ -482,7 +502,7 @@ class ActiveLearning:
                     i += 1
         print(f'Error rate: {error_count/n_to_check} ({n_to_check} samples)')
         
-        return error_count, n_to_check
+        # return error_count, n_to_check
 
     def remove_row(self, id: int) -> None:
         """Removes a row from the data
@@ -520,7 +540,7 @@ class ActiveLearning:
             for e in self.pca:
                 # print(int(e[0]), type(e.tolist()), int(e[0]) in lst)
                 if int(e[0]) in lst:
-                    print(e)
+                    # print(e)
                     temp_pca.append(e[1:].tolist())
             # print(temp_pca, '\n')
 
@@ -541,9 +561,9 @@ class ActiveLearning:
         """Plot the gini index, the margin and the test accuracy on every iteration
         """        
         plt.clf()
-        plt.plot(self.gini_margin_acc, label=['gini index', 'margin', 'test accuracy'])
+        plt.plot(self.gini_margin_acc[:][:2], label=['gini index', 'margin'])
         plt.xlabel('Iterations [n]')
-        plt.ylabel('Magnitude')
+        plt.ylabel('Uncertainty')
         plt.title('Active learning')
         plt.legend()
         plt.show()

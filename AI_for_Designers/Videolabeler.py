@@ -91,7 +91,7 @@ class VideoLabeler:
                 else:
                     print('Label does not exist! Try again')
 
-    def display_html(self, video_file: str, timestamp: float, window_size: float, fig_id: int, video_offset) -> None:
+    def display_html(self, video_file: str, timestamp: float, window_size: float, fig_id: int = -1, video_offset: float = 0) -> None:
         """Function to display the video in the output cell. The video starts automatically at the timestamp,
         plays for window_size seconds and then goes back to the timestamp to loop.
 
@@ -103,7 +103,7 @@ class VideoLabeler:
         """
 
         timestamp += video_offset
-        print(timestamp, window_size)
+        # print(timestamp, window_size)
         # Function to display HTML code  
         display(HTML(f'''
             <head>
@@ -148,8 +148,13 @@ class VideoLabeler:
                         <button onclick="play_{self.html_id}()">Play</button>
                         <button onclick="pause_{self.html_id}()">Pause</button>
                     </div>
-                    <div style="flex:1">
-                        <img src="Plots/plot_to_label_{fig_id}.png" alt="{fig_id}" height="300"></img>
+                    <div style="flex:1">  
+                        <img id="image" src="Plots/plot_to_label_{fig_id}.png" height="300px"></img>
+                        <script type="text/javascript">
+                        if ({fig_id} === -1) {{
+                            document.getElementById("image").src = "";
+                        }}
+                        </script>
                     </div>
                 </div>
             </body>

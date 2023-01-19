@@ -71,6 +71,12 @@ class Stats:
                 'xaxis': {'automargin': True},
                 'yaxis': {'automargin': True}}#, 'categoryorder': 'category ascending'}}
         )
+        fig2 = go.Figure(
+            layout = {
+                'barmode': 'stack',
+                'xaxis': {'automargin': True},
+                'yaxis': {'automargin': True}}#, 'categoryorder': 'category ascending'}}
+        )
         
         color_list = ['blue', 'green', 'purple', 'red', 'orange', 'yellow', 'pink', 'brown', 'cyan', 'magenta', 'olive', 'teal', 'coral', 'gold', 'lavender', 'lime', 'maroon', 'navy', 'orchid', 'plum', 'salmon', 'tan', 'turquoise']
         
@@ -98,7 +104,7 @@ class Stats:
             # print(label_df.duration)  
 
         for label, label_df in df.groupby('label'):
-            fig.add_bar(x=label_df.duration,
+            fig2.add_bar(x=label_df.duration,
                     y= ['All'] * len(label_df.label),
                     base=label_df.ID*offset,
                     orientation='h',
@@ -108,7 +114,8 @@ class Stats:
                     name=label)
             
         # iplot(fig)
-        pio.write_image(fig, 'Plots/distribution.png', scale=6, width=1980*3, height=1080)
+        pio.write_image(fig, 'Plots/distribution.png', scale=3, width=1980*3, height=440)
+        pio.write_image(fig2, 'Plots/distribution_all.png', scale=3, width=1980*3, height=440)
 
     def show_ghan_chart(self, offset: float) -> None:
         """shows the Gantt chart of the data file
@@ -116,9 +123,11 @@ class Stats:
         Args:
             offset (float): offset between the bars of the chart
         """        
+
         self.get_ghan_chart(offset)
-        img = mpimg.imread('Plots/distribution.png')
-        imgplot = plt.imshow(img)
+        fig, axes = plt.subplots(2, 1, figsize=(10, 15))
+        axes[0] = plt.imshow(mpimg.imread('Plots/distribution.png'))
+        axes[1] = plt.imshow(mpimg.imread('Plots/distribution_all.png'))
         plt.axis('off')
         plt.show()
         

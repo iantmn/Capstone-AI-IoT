@@ -1,4 +1,4 @@
-def check_activity_name(Activity: str) -> None:
+def check_product_name(Activity: str) -> None:
     for letter in Activity:
         if not letter.isalpha() and not letter.isalnum() and letter != '_' and letter != '-':
             print('Name is not valid!')

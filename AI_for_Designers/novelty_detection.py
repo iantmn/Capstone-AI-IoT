@@ -74,7 +74,7 @@ class NoveltyDetection():
                 video_offset[split[3]] = float(split[4])
 
         for time_vid in time_video:
-            time_vid[0] += video_offset[time_vid]
+            time_vid[0] += video_offset[time_vid[1]]
             
         # Function to display HTML code  
         display(HTML(f'''
@@ -151,17 +151,3 @@ class NoveltyDetection():
                     <div id="content3"></div>-->
                 </body>
         '''))
-
-
-if __name__ == '__main__':
-    Activity = 'Walking3'
-    ND = NoveltyDetection(fr'..\Preprocessed-data\{Activity}\features_{Activity}_scaled_AL_predictionss.csv',
-                        fr'..\Preprocessed-data\{Activity}\processed_data_files.txt')
-    novelties = ND.detect()
-    # time_video = []
-    # for t_v in novelties:
-    #     t_v[0] += 2.5
-    #     time_video.append(t_v)
-    print(novelties)
-    # print(len(time_video))
-    # ND.play_novelties(novelties)
