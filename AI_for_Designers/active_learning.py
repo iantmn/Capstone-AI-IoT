@@ -561,73 +561,9 @@ class ActiveLearning:
         """Plot the gini index, the margin and the test accuracy on every iteration
         """        
         plt.clf()
-        plt.plot(self.gini_margin_acc[:][:2], label=['gini index', 'margin'])
+        plt.plot(np.array(self.gini_margin_acc)[:, :2], label=['gini index', 'margin'])
         plt.xlabel('Iterations [n]')
         plt.ylabel('Uncertainty')
         plt.title('Active learning')
         plt.legend()
         plt.show()
-
-    # def iteration_0(self):
-    #     X_train = X_pool.iloc[self.labeled_ids]
-    #     y_train = y_pool.iloc[self.labeled_ids]
-    #     self.model.fit(X_train, y_train)
-    #     self.plot_model('Iteration 0')
-
-    # def evaluate_model(self):
-    #     """_summary_
-    #     """        
-    #     '''This function gives possibly relevant evaluation metrics like accuracy, precision, recall and F1 score.'''
-    #     y_pred = self.model.predict(self.X_test)
-    #     y_true = self.y_test
-    #     test_acc = accuracy_score(y_test, y_pred)
-    #     print("Test Accuracy : ", test_acc)
-    #     print("MCC Score : ", matthews_corrcoef(y_true, y_pred))
-    #     print("Classification Report : ")
-    #     print(classification_report(self.y_test, y_pred))
-
-    # def plot_model(self, title: str, new_index: bool = False):
-    #     """_summary_
-
-    #     Args:
-    #         title (str): _description_
-    #         new_index (bool, optional): _description_. Defaults to False.
-    #     """        
-    #     '''Makes a plot. Black points are unlabeled, red points are labeled, star is the most ambiguous point in that iteration.'''
-    #     xlabel = 'Dimension 1'
-    #     ylabel = 'Dimension 2'
-    #     # define data variables
-    #     self.X_train = self.X_pool.iloc[self.labeled_ids]
-    #     self.y_train = self.y_pool.iloc[self.labeled_ids]
-    #     self.X_unk = self.X_pool.iloc[self.unlabeled_ids]
-    #     if new_index:
-    #         X_new = self.X_pool.iloc[new_index]
-    #     # plot points
-    #     plt.scatter(X_unk, c='k', marker = '.')
-    #     plt.scatter(X_train, y_train, c='r', marker = 'o')
-    #     if new_index:
-    #         plt.scatter(X_new, c='y', marker="*", s=125)
-    #     # axis and title name
-    #     plt.xlabel(xlabel)
-    #     plt.ylabel(ylabel)
-    #     plt.title(title)
-    #     plt.show()
-
-    # def label_test_set(self):
-    #     pass
-    # predict y_test
-    # let user confirm or correct
-
-    # def define_activities(self):
-    #     activity_list = []
-    #     ask_activity = input("Please input expected activities. Type X when you're done. ")
-    #     while ask_activity != "X":
-    #         activity_list.append(ask_activity)
-    #         ask_activity = input()
-    #     for i in range(len(activity_list)):
-    #         self.activities[activity_list[i]] = i + 1
-    #     print(f"These are your activities: {activity_list}. If you want to make any changes, run this cell again. ")
-    # done = input("Type Y if you're done, or N if you want to add more activities. ")
-    # if done == "N":
-    # ask_activity = input()
-    # return self.activities
