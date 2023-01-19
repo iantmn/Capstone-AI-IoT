@@ -116,6 +116,13 @@ class ActiveLearning:
             cluster_points (int, optional): Number of clustered starting points. Defaults to 1.
         """     
 
+        directory = r'Plots'
+        for filename in os.listdir(directory):
+            f = os.path.join(directory, filename)
+            if os.path.isfile(f):
+                if 'plot_to_label' in f:
+                    os.remove(f)
+
         # Set randomized starting points       
         self.set_starting_points(random_points)
 
@@ -138,13 +145,6 @@ class ActiveLearning:
 
         with open(fr'Models/model_{self.action_ID}_{maximum_iterations}.pickle', 'wb') as f:
             pickle.dump(self.model, f)
-
-        directory = r'Plots'
-        for filename in os.listdir(directory):
-            f = os.path.join(directory, filename)
-            if os.path.isfile(f):
-                if 'plot_to_label' in f:
-                    os.remove(f)
 
         return self.labels
 
