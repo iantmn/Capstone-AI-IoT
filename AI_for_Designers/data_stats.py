@@ -108,14 +108,14 @@ class Stats:
                     y= ['All'] * len(label_df.label),
                     base=label_df.ID*offset,
                     orientation='h',
-                    showlegend=False,
+                    showlegend=True,
                     marker=dict(color=colors[label]),
                     # marker=label,
                     name=label)
             
         # iplot(fig)
-        pio.write_image(fig, 'Plots/distribution.png', scale=3, width=1980*3, height=440)
-        pio.write_image(fig2, 'Plots/distribution_all.png', scale=3, width=1980*3, height=440)
+        pio.write_image(fig, 'Plots/distribution.png', scale=6, width=len(df), height=220 + len(self.labels)*50)
+        pio.write_image(fig2, 'Plots/distribution_all.png', scale=6, width=len(df), height=220 + (len(self.labels)-2)*20)
 
     def show_ghan_chart(self, offset: float) -> None:
         """shows the Gantt chart of the data file
@@ -125,10 +125,10 @@ class Stats:
         """        
 
         self.get_ghan_chart(offset)
-        fig, axes = plt.subplots(2, 1, figsize=(10, 15))
+        fig, axes = plt.subplots(2, 1, figsize=(15, 10))
         axes[0] = plt.imshow(mpimg.imread('Plots/distribution.png'))
         axes[1] = plt.imshow(mpimg.imread('Plots/distribution_all.png'))
-        plt.axis('off')
+        # plt.axis('off')
         plt.show()
         
         

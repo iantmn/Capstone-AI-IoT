@@ -403,11 +403,10 @@ class ActiveLearning:
             self.gini_margin_acc[-1][0] /= len(unlbld)
             self.gini_margin_acc[-1][1] = lowest_margin
 
-            les_probs = self.model.predict_proba(
-                self.unpreds[np.where(self.unpreds[:, 0] == lowest_margin_sample_id)[0], 3:]).tolist()[0]
-            # les_probs= {}
-            # for i in range(len(probs)):
-            #     les_probs[self.labels]
+            les_probs = {}
+            for label, prob in zip(self.model.classes_, self.model.predict_proba(
+                                   self.unpreds[np.where(self.unpreds[:, 0] == lowest_margin_sample_id)[0], 3:]).tolist()[0]):
+                les_probs[label] = prob
 
             # Add the accuracy, this is only for a nice plot and can be deleted afterwards.
             # self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
