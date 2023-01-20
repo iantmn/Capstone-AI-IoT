@@ -10,7 +10,7 @@ class VideoLabeler:
         self.labels = list(labels)
         self.html_id = 0
 
-    def labeling(self, video_file: str, timestamp: float, window_size: float, fig_id: int, probs: Collection = None, process: str = '', video_offset: float = 0) -> str:
+    def labeling(self, video_file: str, timestamp: float, window_size: float, fig_id: int, probs: dict[str, float] = None, process: str = '', video_offset: float = 0) -> str:
         """Function to label a window in a given video at a given timestamp
 
         Args:
@@ -34,15 +34,24 @@ class VideoLabeler:
         time.sleep(0.3)
         if process:
             print(process)
-        if probs is not None:
-            print(probs)
         
         # Selecting the label:
         while True:
             # Printing the prompt
+            max_length = 0
+            for label in self.labels:
+                if len(label) > max_length:
+                    max_length = len(label)
             print(f"Enter the index or the name of one of the following labels. Enter 'n' to add a new label or 'x' to discard this sample:")
             for i, label in enumerate(self.labels):
-                print(f'{i + 1}. {label}')
+                if probs:
+                    if label in probs:
+                        prob = probs[label]
+                    else:
+                        prob = 0.0
+                    print(f'{i + 1}. {label}     {" " * (max_length - len(label))}{prob:.4}')
+                else:
+                    print(f'{i + 1}. {label}')
             # Get the input from the user
             new_label = input()
 
