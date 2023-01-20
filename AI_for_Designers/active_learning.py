@@ -38,7 +38,7 @@ class ActiveLearning:
         # Name of the activity
         self.action_ID = activity
         # Last ID for redo button
-        self.lastID = 0
+        self.lastID = -1
         # Argument is the set of labels that the user predicts
         self.labels = labels
         # A list of the ID's that we have labeled already
@@ -133,8 +133,12 @@ class ActiveLearning:
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
 
+        np.savetxt(r'Data\data-cycling\ACCL\smalltest', self.preds, delimiter=',', fmt='%s')
+
         self.clustered_starting_points(cluster_points)
         # pd.to_csv('hello?', self.datapd)
+
+        np.savetxt(r'Data\data-cycling\ACCL\smalltest', self.preds, delimiter=',', fmt='%s')
 
         self.update_model()
         # TODO: write to csv file, this doesn't work yet :(
@@ -182,52 +186,27 @@ class ActiveLearning:
                 # Redo button:
                 if got_labeled == 'r':
                     try:
-                        self.labeled_ids.pop(-1)
-                        got_labelded = self.identify(random_id)
+                        del self.labeled_ids[-1]
+                        del seen_activities[-1]
+                        got_labeled = self.identify(random_id)
                     except IndexError:
                         raise ValueError("You ain't nah removin' nottin")
                     if got_labeled == 'x':
+                        self.datapd.drop(random_id, 0)
+                        self.X_pool.drop(random_id, 0)
                         continue
-                if got_labeled not in self.labels:
+                    print(got_labeled)
+                if not (got_labeled in self.labels or got_labeled == 'r'):
                     self.labels.append(got_labeled)
                 seen_activities.append(got_labeled)
                 # Add the ID to the list
                 self.labeled_ids.append(random_id)
                 self.lastID = random_id
-
-        # The determined number of random points were executed. We now set random points as long as not all predicted
-        # classes were found.
-        # print('first stage is done!')
-
-        # keep adding points until every activity is in the training set
-        # We added samples as the centre of each cluster so we don't really need this bit anymore
-        # while not len(set(seen_activities)) == len(self.labels):
-        #     # print(len(set(seen_activities)), len(self.labels))
-        #     while True:
-        #         # We again check if this label is in the pool and if it has not yet been classified.
-        #         random_id = random.randint(0, self.X_pool.shape[0])
-        #         if random_id not in self.labeled_ids and random_id in self.X_pool['ID']:
-        #             break
-        #     # This all is the same as above
-        #     self.labeled_ids.append(random_id)
-        #     # got_labeled = self.identify(self.datapd.iloc[random_id]['time'])
-        #     got_labeled = self.identify(random_id)
-        #     if got_labeled not in self.labels:
-        #         self.labels.append(got_labeled)
-        #     seen_activities.append(got_labeled)
-
-        # We have found a sample of all the labels that we expected
-        # print('second stage is done!')
-        # Randomized phase is done
-        # Give labels to the ID's in the pandaset
-        # print(self.X_pool.iloc[0, :])
-        # print(self.X_pool)
-        # print(self.X_pool.iloc[self.labeled_ids[0], :])
+                print(self.labeled_ids)
+                print(self.lastID)
         for i in range(len(self.labeled_ids)):
             # print(np.where(self.labeled_ids[i]), self.labeled_ids[i])
             self.X_pool.at[self.labeled_ids[i], 'label'] = seen_activities[i]
-        # self.X_pool.to_csv('test2.csv')
-        # self.datapd.to_csv('test3.csv')
 
     def clustered_starting_points(self, n_samples: int) -> None:
         """_summary_
@@ -257,12 +236,11 @@ class ActiveLearning:
         for e in cert_indices:
             # got_labeled = self.identify(self.datapd.iloc[min_indices[i]]['time'])
             got_labeled = self.identify(e)  # for testing
-            self.labeled_ids.append(e)
             if got_labeled == 'x':
                 self.remove_row(e)
             else:
                 if got_labeled == 'r':
-                    self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == e), 0)
+                    self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == self.lastID), 0)
                     got_labeled = self.identify(e)
 
                     if got_labeled == 'x':
@@ -270,8 +248,9 @@ class ActiveLearning:
                         continue
                     elif got_labeled == 'r':
                         raise ValueError('You sneaky foo. please stop trying to break our code. As punishment you shall be labeling from the start')
-                if got_labeled not in self.labels:
+                if not (got_labeled in self.labels or got_labeled == 'r'):
                     self.labels.append(got_labeled)
+                self.labeled_ids.append(e)
                 # print(np.where(self.X_pool.iloc[:, 0] == e)[0][0])
                 line = self.X_pool.iloc[np.where(self.X_pool.iloc[:, 0] == e)[0][0], :].copy()
                 # print(line)
@@ -327,7 +306,7 @@ class ActiveLearning:
             return get_id_to_label, 0
         else:
             if new_label == 'r':
-                self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == get_id_to_label), 0)
+                self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == self.lastID), 0)
                 new_label = self.identify(get_id_to_label,
                                   les_probs=les_probs)
 
@@ -336,8 +315,7 @@ class ActiveLearning:
                     return get_id_to_label, 0
                 elif new_label == 'r':
                     raise ValueError('You sneaky foo. please stop trying to break our code. As punishment you shall be labeling from the start')
-
-            if new_label not in self.labels:
+            if not (new_label in self.labels or new_label == 'r'):
                 self.labels.append(new_label)
             # Extract the row from the unpredicted array
             t = self.unpreds[self.unpreds[:, 0] == get_id_to_label, :]

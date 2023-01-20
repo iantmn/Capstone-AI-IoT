@@ -23,6 +23,8 @@ class VideoLabeler:
         Returns:
             str: the name of the selected label.
         """
+        # For testing
+        # time.sleep(3)
         # Clear the output of the cell
         clear_output(wait=True)
         # Making sure that the cell is empty by waiting some time
@@ -69,7 +71,7 @@ class VideoLabeler:
             # If the input is not in integer
             except ValueError:
                 # Check if the label exists
-                if new_label in self.labels or new_label == 'x':
+                if new_label in self.labels or new_label == 'x' or new_label == 'r':
                     return new_label
                 # If the option to add a new label is chosen
                 elif new_label == 'n':
