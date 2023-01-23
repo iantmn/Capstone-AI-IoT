@@ -68,7 +68,7 @@ class NoveltyDetection():
             window_size (float): length of the window in seconds.
         """
 
-        id = int(time.time())
+        html_id = int(str(int(time.time()))[-3:])
 
         video_offset = {}
         with open(self.processed_data_files) as f:
@@ -79,6 +79,8 @@ class NoveltyDetection():
         for time_vid in time_video:
             time_vid[0] += video_offset[time_vid[1]]
             
+
+        print(html_id)    
         # Function to display HTML code  
         display(HTML(f'''
                 <head>
@@ -88,14 +90,14 @@ class NoveltyDetection():
                     let time = time_video[0][0];
                     const ws = {window_size};
 
-                    function init_{id}() {{
-                        let video = document.getElementById("{id}");
+                    function init_{html_id}() {{
+                        let video = document.getElementById("nov_{html_id}");
                         video.currentTime = time;
-                        play_nov();
+                        play_{html_id}();
                     }}
 
-                    function play_{id}() {{
-                        let video = document.getElementById("{id}");
+                    function play_{html_id}() {{
+                        let video = document.getElementById("nov_{html_id}");
                         if (video.currentTime < time || video.currentTime >= time + ws) {{
                             video.currentTime = time;
                         }}
@@ -107,34 +109,30 @@ class NoveltyDetection():
                         }}, 1);
                     }}
 
-                    function pause_{id}() {{
-                        let video = document.getElementById("{id}");
+                    function pause_{html_id}() {{
+                        let video = document.getElementById("nov_{html_id}");
                         video.pause();
                     }}
 
-                    function prev_{id}() {{
+                    function prev_{html_id}() {{
                     if (id >= 0) {{
                             id = id - 1;
                             time = time_video[id][0];
-                            let video = document.getElementById("{id}");
+                            let video = document.getElementById("nov_{html_id}");
                             video.setAttribute('src', time_video[id][1]);
                             document.getElementById("content").innerHTML = 'Novelty ' + (id + 1) + ' out of {len(time_video)} at ' + time + 's in ' + time_video[id][1];
-                            // document.getElementById("content2").innerHTML = time_video[id][1];
-                            // document.getElementById("content3").innerHTML = time;
-                            play_nov();
+                            play_{html_id}();
                         }}
                     }}
 
-                    function next_{id}() {{
+                    function next_{html_id}() {{
                         if (id < {len(time_video)} - 1) {{
                             id = id + 1;
                             time = time_video[id][0];
-                            let video = document.getElementById("{id}");
+                            let video = document.getElementById("nov_{html_id}");
                             video.setAttribute('src', time_video[id][1]);
                             document.getElementById("content").innerHTML = 'Novelty ' + (id + 1) + ' out of {len(time_video)} at ' + time + 's in ' + time_video[id][1];
-                            // document.getElementById("content2").innerHTML = time_video[id][1];
-                            // document.getElementById("content3").innerHTML = time;
-                            play_nov();
+                            play_{html_id}();
                         }}
                     }}
 
@@ -142,13 +140,13 @@ class NoveltyDetection():
                     <title></title>
                 </head>
                 <body>
-                    <video id="{id}" width="500px" src="{time_video[0][1]}" muted></video>
+                    <video id="nov_{html_id}" height="300px" src="{time_video[0][1]}" muted></video>
                     <br>
-                    <script type="text/javascript">init_{id}()</script>
-                    <button onClick="play_{id}()">Play</button>
-                    <button onClick="pause_{id}()">Pause</button>
-                    <button onClick="prev_{id}()">Previous novelty</button>
-                    <button onClick="next_{id}()">Next novelty</button>
+                    <script type="text/javascript">init_{html_id}()</script>
+                    <button onClick="play_{html_id}()">Play</button>
+                    <button onClick="pause_{html_id}()">Pause</button>
+                    <button onClick="prev_{html_id}()">Previous novelty</button>
+                    <button onClick="next_{html_id}()">Next novelty</button>
                     <div id="content">Novelty 1 out of {len(time_video)} at {time_video[0][0]}s in {time_video[0][1]}</div>
                 </body>
         '''))

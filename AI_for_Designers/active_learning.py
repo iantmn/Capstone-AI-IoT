@@ -131,12 +131,12 @@ class ActiveLearning:
 
         # Set the most ambiguous points iteratively
         self.iterate(maximum_iterations)
-        # Write to csv file
-        # self.write_to_file()
 
+        # Save the model as a picle file
         with open(fr'Models/model_{self.action_ID}_{maximum_iterations}.pickle', 'wb') as f:
             pickle.dump(self.model, f)
 
+        # Return the labels, you may find new labels while training
         return self.labels
 
     def set_starting_points(self, n_samples: int) -> None:
@@ -171,35 +171,36 @@ class ActiveLearning:
                 # Redo button:
                 if got_labeled == 'r':
                     try:
+                        # Remove it from the list that we will identify
                         del self.labeled_ids[-1]
                         del seen_activities[-1]
                         got_labeled = self.identify(random_id)
+                    # Catch when you remove the first element
                     except IndexError:
                         raise ValueError("You ain't nah removin' nottin")
                     if got_labeled == 'x':
                         self.datapd.drop(random_id, 0)
                         self.X_pool.drop(random_id, 0)
                         continue
-                    print(got_labeled)
+                # Add it to the labels list if it is a new label
                 if not (got_labeled in self.labels or got_labeled == 'r'):
                     self.labels.append(got_labeled)
                 seen_activities.append(got_labeled)
-                # Add the ID to the list
                 self.labeled_ids.append(random_id)
                 self.lastID = random_id
-                print(self.labeled_ids)
-                print(self.lastID)
+        # Fill the X_pool
         for i in range(len(self.labeled_ids)):
             # print(np.where(self.labeled_ids[i]), self.labeled_ids[i])
             self.X_pool.at[self.labeled_ids[i], 'label'] = seen_activities[i]
 
-    def clustered_starting_points(self, n_samples: int) -> None:
-        """_summary_
+    def clustered_starting_points(self, n_samples: int = 1) -> None:
+        """Find the training point based on a clustering algorithm. You should be able to find at least one sample of each label you predict will be in the dataset.
 
         Args:
-            n_samples (int): _description_
+            n_samples (int): Amount of samples that you want from each cluster centre. Keep this value at 1, it is not properly tested. TODO
         """        
         # Amount of clusters that we expect
+        # There is a multiplier of 1.5 so that small clusters are not overlooked
         n_clusters = int(len(self.labels) * 1.5) + 1
         # Determine the means
         kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(self.unpreds[:, 3:])
@@ -224,15 +225,16 @@ class ActiveLearning:
             if got_labeled == 'x':
                 self.remove_row(e)
             else:
+                # Redo button
                 if got_labeled == 'r':
                     self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == self.lastID), 0)
                     got_labeled = self.identify(e)
-
                     if got_labeled == 'x':
                         self.remove_row(e)
                         continue
                     elif got_labeled == 'r':
                         raise ValueError('You sneaky foo. please stop trying to break our code. As punishment you shall be labeling from the start')
+                # Add the label to the label list if it is a new label
                 if not (got_labeled in self.labels or got_labeled == 'r'):
                     self.labels.append(got_labeled)
                 self.labeled_ids.append(e)
@@ -260,19 +262,16 @@ class ActiveLearning:
             # label it (set_ambiguous_point)
             # add to training data 
             new_index, margin = self.set_ambiguous_point()
-            # Iterate for a decided number of points or until you have a certain margin or gini
-            # TODO: Investigate margin or gini at which you have a good accuracy
+            # Iterate for a decided number of points or until you have a certain margin
             if iter_num >= max_iter or margin > 0.15:
                 break
 
     def set_ambiguous_point(self) -> tuple[int, int]:
         """Lets designer label ambiguous point
 
-        Raises:
-            ValueError: _description_
-
         Returns:
-            tuple[int, int]: _description_
+            tuple[int, int]: Return the ID that has been labelled and the margin (certainty) of the point that has been labeled.
+
         """      
 
         self.html_id = time.time()
@@ -291,6 +290,7 @@ class ActiveLearning:
             self.remove_row(get_id_to_label)
             return get_id_to_label, 0
         else:
+            # Redo button
             if new_label == 'r':
                 self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == self.lastID), 0)
                 new_label = self.identify(get_id_to_label,
@@ -319,15 +319,15 @@ class ActiveLearning:
             # Return the label and the margin
             return get_id_to_label, margin
 
-    def identify(self, id, les_probs=None, process: str = ''):
+    def identify(self, id, les_probs: dict[str, float] | None = None, process: str = ''):
         """This function will call the identification system from Gijs en Timo, for now it has been automated
 
         Args:
-            id (int): _description_
-            les_probs (_type_, optional): _description_. Defaults to None.
+            id (int): The ID that will be labeled
+            les_probs (_type_, optional): When in iterate, this tuple has the probabilities of the current datapoint to each label. When defaulted to None this does not print.
 
         Returns:
-            object: _description_
+            object: return the return of the videolabeler, so the class that the point is labeled as
         """        
         
         timestamp = self.datapd.iloc[id, 2]
