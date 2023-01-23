@@ -160,7 +160,7 @@ class VideoLabeler:
                         <button onclick="pause_{self.html_id}()">Pause</button>
                     </div>
                     <div style="flex:1">  
-                        <img id="image" src="Plots/plot_to_label_{fig_id}.png" height="300px"></img>
+                    <img id="image" src="Plots/plot_to_label_{fig_id}.png" height="300px"></img>
                         <script type="text/javascript">
                         if ({fig_id} === -1) {{
                             document.getElementById("image").src = "";
