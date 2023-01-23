@@ -30,23 +30,23 @@ n_clusters = 4
 train_size = 0.8
 
 # supervised learning
-do_knn = False
-do_svc = False
+do_knn = True
+do_svc = True
 
 # random forest
-do_rf = False
-plot_rf = False
-plot_rf_tree = False
+do_rf = True
+plot_rf = True
+plot_rf_tree = True
 
 # other models
-do_dt = False
-do_bagged_class = False
-do_gd = False
-do_gnb = False
+do_dt = True
+do_bagged_class = True
+do_gd = True
+do_gnb = True
 
 # clustering
-do_kmeans = False
-do_kmeans_plot = False
+do_kmeans = True
+do_kmeans_plot = True
 
 # gridsearch
 do_gridsearch_svc = False
@@ -186,7 +186,6 @@ if do_kmeans:
             ii = np.where(label == l)
             axs[0].scatter(x_train_pca[ii, 0], x_train_pca[ii, 1], c=cdict[l], label=ldict[l])
         axs[0].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
-        axs[0].legend()
         
         axs[1].title.set_text('Actual result')
         for l in u_labels:
@@ -195,7 +194,7 @@ if do_kmeans:
         axs[1].scatter(centroids[:,0] , centroids[:,1] , s = 80, c="black", marker='x')
         axs[1].legend()
         plt.show()
-
+        
 # ------ knn ------ #
 
 if do_knn:
@@ -270,69 +269,6 @@ if do_rf:
         fig = plt.figure(figsize=(15, 10))
         plot_tree(estimator, filled=True, feature_names=x.columns, class_names=le.classes_, impurity=True, rounded=True)
         plt.show()
-
-    if plot_trees:
-        print(np.shape(y_test))
-        print(y_test)
-        class_A_corr = 0
-        class_B_corr = 0
-        class_C_corr = 0
-        class_A_incorr = 0 
-        class_B_incorr = 0
-        class_C_incorr = 0
-        for tree in rf.estimators_:
-            tree.fit(x_train, y_train)
-            test_pred = tree.predict(x_test)
-            print(test_pred)
-            print(y_test)
-            print(len(test_pred))
-            print(len(y_test))
-            for pred in test_pred:
-                for actual in y_test:
-                    if pred == 0 and actual == 0:
-                        class_A_corr += 1
-                    elif pred == 1 and actual == 1:
-                        class_B_corr += 1
-                    elif pred == 2 and actual == 2:
-                        class_C_corr += 1
-                    elif pred == 0 and actual > 0:
-                        class_A_incorr += 1
-                    elif pred == 1 and actual != 1:
-                        class_B_incorr += 1
-                    elif pred == 2 and actual != 2:
-                        class_C_incorr += 1
-            acc_score = accuracy_score(y_test, test_pred)
-            print(acc_score)
-
-        lst_corr = [class_A_corr, class_B_corr, class_C_corr]
-        print(lst_corr)
-        lst_incorr = [class_A_incorr, class_B_incorr, class_C_incorr]
-        print(lst_incorr)
-        bins = ['Class A', 'Class B', 'Class C']
-        y_pos = np.arange(len(bins))    
-        plt.bar(y_pos - 0.2, lst_corr, 0.4, label='Correct')
-        plt.bar(y_pos + 0.2, lst_incorr, 0.4, label='Incorrect')
-        plt.xticks(y_pos, bins)
-        plt.xlabel("Distribution")
-        plt.ylabel("Values")
-        plt.legend()
-        plt.show()
-        # X = ['Group A','Group B','Group C']
-        # Ygirls = [class_A_corr, class_B_corr, class_C_corr]
-        # Zboys = [class_A_incorr, class_B_incorr, class_C_incorr]
-        
-        # X_axis = np.arange(len(X))
-        
-        # plt.bar(X_axis, Ygirls, 0.4, label = 'Girls')
-        # plt.bar(X_axis, Zboys, 0.4, label = 'Boys')
-        
-        # plt.xticks(X_axis, X)
-        # plt.xlabel("Groups")
-        # plt.ylabel("Number of Students")
-        # plt.title("Number of Students in each group")
-        # plt.legend()
-        # plt.show()
-
     
 # ------ decision tree ------ #
 
