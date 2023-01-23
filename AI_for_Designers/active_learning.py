@@ -3,6 +3,7 @@ from __future__ import annotations
 from AI_for_Designers.Videolabeler import VideoLabeler
 
 import os
+import time
 import pickle
 import random
 import numpy as np
@@ -79,10 +80,9 @@ class ActiveLearning:
     def update_model(self) -> None:
         """This model determines the current average max depth of the trees in the random forest. If the depth has changed drastically since the last check we update the model"""
         # Determine the depth of the current model
-        # self.model.estimators_.max_depth
         forest = self.determine_model().fit(self.preds[:, 3:], self.preds[:, 1])
-        avg_depth = sum(estimator.tree_.max_depth for estimator in forest.estimators_)//100+1
-        # print(avg_depth)
+        # Multiplication factor of 1.25 so that the tree can grow while actively training but has a limit to prevent overfitting.
+        avg_depth = int(sum(estimator.tree_.max_depth for estimator in forest.estimators_)/100*1.25)+1
         self.model = self.determine_model(avg_depth)
 
     @staticmethod
@@ -103,10 +103,8 @@ class ActiveLearning:
         Returns:
             tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: returns the X_pool, X_test, y_pool, y_test
         """        
-        # Parameters for the split
         random_state = 42
         test_size = 0.2
-        # return to X_pool, X_test, y_pool, y_test
         return train_test_split(self.datapd, self.datapd['label'], test_size=test_size, random_state=random_state)
 
     def training(self, maximum_iterations, random_points: int = 3, cluster_points: int = 1) -> list[str]:
@@ -116,33 +114,20 @@ class ActiveLearning:
             maximum_iterations (_type_): Maximum amount of iterations
             random_points (int, optional): Number of random starting points. Defaults to 3.
             cluster_points (int, optional): Number of clustered starting points. Defaults to 1.
-        """     
+        """
 
-        directory = r'Plots'
-        for filename in os.listdir(directory):
-            f = os.path.join(directory, filename)
-            if os.path.isfile(f):
-                if 'plot_to_label' in f:
-                    os.remove(f)
-
+        # Remove prediction point images to prevent flooding when you stop active learning prematurely
+        self.remove_pngs()
         # Set randomized starting points       
         self.set_starting_points(random_points)
 
         # Set the predicted and und predicted sets into new arrays, these will be used further on
-        # print(self.X_pool.loc[self.X_pool['label'] != ''])
         self.preds = np.array(self.X_pool.loc[self.X_pool['label'] != ''])
         self.unpreds = np.array(self.X_pool.loc[self.X_pool['label'] == ''])
 
-        np.savetxt(r'Data\data-cycling\ACCL\smalltest', self.preds, delimiter=',', fmt='%s')
-
         self.clustered_starting_points(cluster_points)
-        # pd.to_csv('hello?', self.datapd)
-
-        np.savetxt(r'Data\data-cycling\ACCL\smalltest', self.preds, delimiter=',', fmt='%s')
 
         self.update_model()
-        # TODO: write to csv file, this doesn't work yet :(
-        # np.savetxt("test_indices.csv", self.preds, delimiter=",")
 
         # Set the most ambiguous points iteratively
         self.iterate(maximum_iterations)
@@ -290,7 +275,8 @@ class ActiveLearning:
             tuple[int, int]: _description_
         """      
 
-        self.html_id += 1
+        self.html_id = time.time()
+        self.remove_pngs()
         # Determine the ID of the most ambiguous datapoint      
         get_id_to_label, margin, les_probs = self.find_most_ambiguous_id()
         # Add it to the IDs that we have labeled
@@ -329,9 +315,6 @@ class ActiveLearning:
             self.lastID = get_id_to_label
             if get_id_to_label in self.unpreds[:, 1]:
                 raise ValueError('you did an oopsie')
-
-            if self.html_id > 0:
-                os.remove(f'Plots/plot_to_label_{self.html_id - 1}.png')
             
             # Return the label and the margin
             return get_id_to_label, margin
@@ -454,6 +437,8 @@ class ActiveLearning:
         Returns:
             int: error_count and n_to_check
         """       
+
+        self.html_id = -1
         
         # TODO improve:
         if n_to_check is None or n_to_check > len(self.X_test):
@@ -496,6 +481,14 @@ class ActiveLearning:
         pca = PCA(n_components=2, svd_solver='auto')
         self.pca = np.array(pca.fit_transform(self.datapd.iloc[:, 3:]))
         self.pca = np.append(np.array([[i for i in range(len(self.datapd))]]).reshape(-1, 1), self.pca, axis=1)
+
+    def remove_pngs(self):
+        directory = r'Plots'
+        for filename in os.listdir(directory):
+            f = os.path.join(directory, filename)
+            if os.path.isfile(f):
+                if 'plot_to_label' in f:
+                    os.remove(f)
 
     def print_prediction_point(self, current_id: int):
         """Creates a file with a plot of the data and the current prediction point

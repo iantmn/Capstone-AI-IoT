@@ -8,7 +8,7 @@ import plotly.graph_objs as go
 from plotly.offline import init_notebook_mode, iplot
 
 from collections.abc import Collection
-
+from copy import deepcopy
 
 class Stats:
     def __init__(self, data_file: str, labels: Collection) -> None:
@@ -126,14 +126,17 @@ class Stats:
 
         self.get_ghan_chart(offset)
         fig, axes = plt.subplots(2, 1, figsize=(15, 10))
-        axes[0] = plt.imshow(mpimg.imread('Plots/distribution.png'))
-        axes[1] = plt.imshow(mpimg.imread('Plots/distribution_all.png'))
-        # plt.axis('off')
+        axes[0].imshow(mpimg.imread('Plots/distribution.png'))
+        axes[0].axis('off')
+        axes[1].imshow(mpimg.imread('Plots/distribution_all.png'))
+        axes[1].axis('off')
         plt.show()
         
-        
-# labels = ['stenen', 'cement', 'stilstaan', 'remmen', 'versnellen', 'vierkante stenen']
-# stats = Stats(fr'../Preprocessed-data/Cycling/features_Cycling_scaled_AL_predictionss.csv', labels)
-# # stats.print_percentages()
-# stats.get_ghan_chart(5, 0.5)
+
+# Product = 'Mok'
+# labels = ['Still', 'Pick_up', 'Put_down', 'Drinking', 'Walking']
+# stats = Stats(fr'../Preprocessed-data/{Product}/features_{Product}_scaled_AL_predictionss.csv', labels)
+# # # stats.print_percentages()
+# stats.show_ghan_chart(0.1)
+
     
