@@ -1,2 +1,0 @@
-./csvfile_test1.csv,0,410,./ynotebook dingen/Walking_part_2.mp4
-./csvfile_test2.csv,411,573,./notebook dingen/Walking_part_1.mp4
