@@ -23,8 +23,6 @@ class VideoLabeler:
         Returns:
             str: the name of the selected label.
         """
-        # For testing
-        # time.sleep(3)
         # Clear the output of the cell
         clear_output(wait=True)
         # Making sure that the cell is empty by waiting some time
@@ -44,7 +42,8 @@ class VideoLabeler:
             for label in self.labels:
                 if len(label) > max_length:
                     max_length = len(label)
-            print(f"Enter the index or the name of one of the following labels. Enter 'n' to add a new label or 'x' to discard this sample:")
+            print(f"Enter the index or the name of one of the following labels. Enter 'n' to add a new label, 'x' to discard this sample, and 'd' to delete the previously labeled  sample:")
+            # Print the labels and their probabilities of classification if given
             for i, label in enumerate(self.labels):
                 if probs:
                     if label in probs:

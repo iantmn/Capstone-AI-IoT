@@ -390,16 +390,10 @@ class ActiveLearning:
             for label, prob in zip(self.model.classes_, self.model.predict_proba(
                                    self.unpreds[np.where(self.unpreds[:, 0] == lowest_margin_sample_id)[0], 3:]).tolist()[0]):
                 les_probs[label] = prob
-
-            # Add the accuracy, this is only for a nice plot and can be deleted afterwards.
-            # self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
             # Oeh fun result get better with more samples Oeh!
-            # print(self.gini_margin_acc[-1])
             return lowest_margin_sample_id, lowest_margin, les_probs
         # Exception mostly for testing idk if it will every be handydany again
         except ValueError:
-            # self.X_pool.to_csv('xpool doet raar.csv')
-            # print(preds)
             raise ValueError(self.preds)
 
     @staticmethod
@@ -407,10 +401,10 @@ class ActiveLearning:
         """returns the gini: 1 - sum(p^2)
 
         Args:
-            list_of_p (_type_): _description_
+            list_of_p (_type_): A list of the probabilities of the to be labeled point belongs to each class
 
         Returns:
-            float: The gini impurity index
+            float: The gini impurity index, to be used for evaluation your model
         """        
         # Return the gini: 1 - sum(p^2)
         return 1 - sum((item * item for item in list_of_p))
@@ -432,7 +426,8 @@ class ActiveLearning:
         we ask the designer to confirm n predicted test labels
 
         Args:
-            n_to_check (int | None, optional): _description_. Defaults to None.
+            n_to_check (int | None, optional): Amount of values that you want tested. When None is given, 
+            you will iterate through the entire test set (20% of the entire sample size).
 
         Returns:
             int: error_count and n_to_check
@@ -441,28 +436,56 @@ class ActiveLearning:
         self.html_id = -1
         
         # TODO improve:
+        # Check for None or numerical size
         if n_to_check is None or n_to_check > len(self.X_test):
             n_to_check = len(self.X_test)
-        i = 0
-        while i < n_to_check-1:
             test_ids = []
-            while len(test_ids) != n_to_check-i:
+            # j is to remember how many samples you deleted
+            j = 0
+            # Find amount of values that you still need
+            while len(test_ids) != n_to_check:
                 random_id = random.randint(0, self.datapd.shape[0])
+                # Find testing ids
                 if random_id in self.X_test[:, 0] and random_id not in test_ids:
                     test_ids.append(random_id)
             predictions = self.model.predict(np.array(self.datapd.iloc[test_ids, 3:]))
             error_count = 0
 
+            # Iterate through the test ids
             for j in range(len(test_ids)):
                 result = self.identify(test_ids[j], process='TESTING')
                 if result == 'x':
-                    pass
+                    j += 1
                 elif predictions[j] != result:
                     error_count += 1
-                    i += 1
-                else:
-                    i += 1
-        print(f'Error rate: {error_count/n_to_check} ({n_to_check} samples)')
+
+            print(f'Error rate: {error_count/(n_to_check-j)} ({n_to_check-j} samples)')
+        else:
+            # Make sure that 
+            i = 0
+            # Make sure you always test the amount of values that you gave with n_to_check, even if you delete some sample.
+            while i < n_to_check-1:
+                test_ids = []
+                # Find amount of values that you still need, even if samples have been deleted
+                while len(test_ids) != n_to_check-i:
+                    random_id = random.randint(0, self.datapd.shape[0])
+                    # Find testing ids
+                    if random_id in self.X_test[:, 0] and random_id not in test_ids:
+                        test_ids.append(random_id)
+                predictions = self.model.predict(np.array(self.datapd.iloc[test_ids, 3:]))
+                error_count = 0
+
+                # Iterate through the test ids
+                for j in range(len(test_ids)):
+                    result = self.identify(test_ids[j], process='TESTING')
+                    if result == 'x':
+                        pass
+                    elif predictions[j] != result:
+                        error_count += 1
+                        i += 1
+                    else:
+                        i += 1
+            print(f'Error rate: {error_count/n_to_check} ({n_to_check} samples)')
         
         # return error_count, n_to_check
 

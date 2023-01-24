@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 import numpy as np
 import pandas as pd
 from os import cpu_count
@@ -11,19 +10,20 @@ from IPython.display import HTML, display
 
 
 class NoveltyDetection():
-    def __init__(self, data_file: str, processed_data_files: str):
+    def __init__(self, data_file: str, processed_data_files: str) -> None:
         self.data_file = data_file
         self.datapd = pd.read_csv(data_file)
         self.processed_data_files = processed_data_files
+        self.html_id = 0
 
-    def detect(self, contamination: int = 0.1) -> list[int]:
+    def detect(self, contamination: int = 0.1) -> list[list[float, str]]:
         """Function that detects anomalies in the data using LocalOutlierFactor
 
         Args: 
             contamination (int): The percentage of the dataset that is considered an outlier. Defaults to 0.1.
 
         Returns:
-            list[int]: A list of the ids of the novelties
+            list[list[float, str]]: A list containg the lists with the timestamp and the videofile
         """        
 
         # Choosing the model LocalOutlierFactor
@@ -38,8 +38,7 @@ class NoveltyDetection():
         # Saving a list of the outliers ids  
         ids = np.where(prediction == -1)[0]
 
-        time_video = []
-        # print(self.datapd)
+        time_video: list[list[float, str]] = []
         for id in ids:
             with open(self.data_file) as f:
                 f.readline()
@@ -68,8 +67,7 @@ class NoveltyDetection():
             window_size (float): length of the window in seconds.
         """
 
-        html_id = int(str(int(time.time()))[-3:])
-
+        # Add the offset between the start of the video and the data to each timestamp
         video_offset = {}
         with open(self.processed_data_files) as f:
             for line in f:
@@ -78,9 +76,7 @@ class NoveltyDetection():
 
         for time_vid in time_video:
             time_vid[0] += video_offset[time_vid[1]]
-            
-
-        print(html_id)    
+              
         # Function to display HTML code  
         display(HTML(f'''
                 <head>
@@ -90,14 +86,15 @@ class NoveltyDetection():
                     let time = time_video[0][0];
                     const ws = {window_size};
 
-                    function init_{html_id}() {{
-                        let video = document.getElementById("nov_{html_id}");
+                    function init_nov() {{
+                        id = 0;
+                        let video = document.getElementById("nov_{self.html_id}");
                         video.currentTime = time;
-                        play_{html_id}();
+                        play_nov();
                     }}
 
-                    function play_{html_id}() {{
-                        let video = document.getElementById("nov_{html_id}");
+                    function play_nov() {{
+                        let video = document.getElementById("nov_{self.html_id}");
                         if (video.currentTime < time || video.currentTime >= time + ws) {{
                             video.currentTime = time;
                         }}
@@ -109,30 +106,30 @@ class NoveltyDetection():
                         }}, 1);
                     }}
 
-                    function pause_{html_id}() {{
-                        let video = document.getElementById("nov_{html_id}");
+                    function pause_nov() {{
+                        let video = document.getElementById("nov_{self.html_id}");
                         video.pause();
                     }}
 
-                    function prev_{html_id}() {{
+                    function prev_nov() {{
                     if (id >= 0) {{
                             id = id - 1;
                             time = time_video[id][0];
-                            let video = document.getElementById("nov_{html_id}");
+                            let video = document.getElementById("nov_{self.html_id}");
                             video.setAttribute('src', time_video[id][1]);
                             document.getElementById("content").innerHTML = 'Novelty ' + (id + 1) + ' out of {len(time_video)} at ' + time + 's in ' + time_video[id][1];
-                            play_{html_id}();
+                            play_nov();
                         }}
                     }}
 
-                    function next_{html_id}() {{
+                    function next_nov() {{
                         if (id < {len(time_video)} - 1) {{
                             id = id + 1;
                             time = time_video[id][0];
-                            let video = document.getElementById("nov_{html_id}");
+                            let video = document.getElementById("nov_{self.html_id}");
                             video.setAttribute('src', time_video[id][1]);
                             document.getElementById("content").innerHTML = 'Novelty ' + (id + 1) + ' out of {len(time_video)} at ' + time + 's in ' + time_video[id][1];
-                            play_{html_id}();
+                            play_nov();
                         }}
                     }}
 
@@ -140,13 +137,15 @@ class NoveltyDetection():
                     <title></title>
                 </head>
                 <body>
-                    <video id="nov_{html_id}" height="300px" src="{time_video[0][1]}" muted></video>
+                    <video id="nov_{self.html_id}" width="500px" src="{time_video[0][1]}" muted></video>
                     <br>
-                    <script type="text/javascript">init_{html_id}()</script>
-                    <button onClick="play_{html_id}()">Play</button>
-                    <button onClick="pause_{html_id}()">Pause</button>
-                    <button onClick="prev_{html_id}()">Previous novelty</button>
-                    <button onClick="next_{html_id}()">Next novelty</button>
+                    <script type="text/javascript">init_nov()</script>
+                    <button onClick="play_nov()">Play</button>
+                    <button onClick="pause_nov()">Pause</button>
+                    <button onClick="prev_nov()">Previous novelty</button>
+                    <button onClick="next_nov()">Next novelty</button>
                     <div id="content">Novelty 1 out of {len(time_video)} at {time_video[0][0]}s in {time_video[0][1]}</div>
                 </body>
         '''))
+
+        self.html_id += 1
