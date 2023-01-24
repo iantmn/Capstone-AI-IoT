@@ -4,6 +4,7 @@ from typing import Any
 
 import os
 import numpy as np
+import warnings
 import matplotlib.pyplot as plt
 
 from collections.abc import Collection, Iterable
@@ -233,6 +234,18 @@ class Preprocessing:
             ValueError: This error is raised when a value in the file cannot be converted to a float.
         """
 
+        if start_offset < 0:
+            raise ValueError(f'start_offset should be greater or equal to zero, but is {start_offset}')
+        if stop_offset < 0:
+            raise ValueError(f'stop_offset should be greater or equal to zero, but is {stop_offset}')
+        if size <= 0:
+            raise ValueError(f'Frame size should be greater than zero, but is {size}')
+        if offset <= 0:
+            raise ValueError(f'Frame offset should be greater than zero, but is {offset}')
+        if size < offset:
+            warnings.warn('It is advised to keep the frame size larger than the frame offset!')
+
+
         input_file_b = ''  # empty string to check if two files are used or not
         # Assign input_file_a and _b
         if isinstance(input_file, str):
@@ -318,27 +331,33 @@ class Preprocessing:
 
                 # Write the header to file
                 g.write(specified_header + '\n')
+        
+        # get sampling frequency and the last point
+        sampling_frequency, last_point, size_a = self.get_sampling_frequency(input_file_a, start_offset, stop_offset,
+                                                                             size)
+        # Amount of samples per window
+        samples_window = int(size_a * sampling_frequency) + 1  # Ceil
+
+        # Do the same for gyroscope and call it 'b'
+        if input_file_b != '':
+            sampling_frequency_b, last_point_b, size_b = self.get_sampling_frequency(input_file_b, start_offset, stop_offset, size)
+
+            prev_window_b: list[list[float]] = []
+            current_window_b: list[list[float]] = []
+            
+            samples_window_b = int(size_b * sampling_frequency_b) + 1
+
+        if start_offset > last_point - stop_offset:
+            raise ValueError(f'start_offset or stop_offset too large!'
+                             f'The start_offset should be smaller than the last datapoint minus the stop_offset ({last_point - stop_offset}s)')
+        if start_offset > last_point_b - stop_offset:
+            raise ValueError(f'start_offset or stop_offset too large!'
+                                f'The start_offset should be smaller than the last datapoint minus the stop_offset ({last_point_b - stop_offset}s)')
 
         try:
-            # get sampling frequency and the last point
-            sampling_frequency, last_point, size_a = self.get_sampling_frequency(input_file_a, start_offset, stop_offset,
-                                                                                 size)
-
             # Variable for the previous window and the current window
             prev_window: list[list[float]] = []
             current_window: list[list[float]] = []
-
-            # Amount of samples per window
-            samples_window = int(size_a * sampling_frequency) + 1  # Ceil
-
-            # Do the same for gyroscope and call it 'b'
-            if input_file_b != '':
-                sampling_frequency_b, last_point_b, size_b = self.get_sampling_frequency(input_file_b, start_offset, stop_offset, size)
-
-                prev_window_b: list[list[float]] = []
-                current_window_b: list[list[float]] = []
-                
-                samples_window_b = int(size_b * sampling_frequency_b) + 1
 
             # When the end of a datafile is reached, this value is set to False and the loop is exited
             not_finished = True

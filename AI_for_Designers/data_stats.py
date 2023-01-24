@@ -60,7 +60,6 @@ class Stats:
         Raises:
             ValueError: Raised when there are more labels than colors in the color_list variable. Code won't work otherwise. Designers can add more colors to the color_list variable or reduce the number of labels.
         """        
-        # init_notebook_mode()
 
         df = pd.read_csv(self.data_file)
         df['duration'] = offset

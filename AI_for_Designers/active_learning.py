@@ -107,7 +107,7 @@ class ActiveLearning:
         test_size = 0.2
         return train_test_split(self.datapd, self.datapd['label'], test_size=test_size, random_state=random_state)
 
-    def training(self, maximum_iterations, random_points: int = 3, cluster_points: int = 1) -> list[str]:
+    def training(self, maximum_iterations, random_points: int = 4, cluster_points: int = 1) -> list[str]:
         """the process of training the datapoints, first set starting points, then iterate until you have a certainty
 
         Args:
