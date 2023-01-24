@@ -27,6 +27,7 @@ class VideoLabeler:
         clear_output(wait=True)
         # Making sure that the cell is empty by waiting some time
         # time.sleep(0.1)
+        print(timestamp)
         # Show and play the video
         self.display_html(video_file, timestamp, window_size, fig_id, video_offset)
         # Making sure that the cell is empty by waiting some time
@@ -70,7 +71,9 @@ class VideoLabeler:
             # If the input is not in integer
             except ValueError:
                 # Check if the label exists
-                if new_label in self.labels or new_label == 'x' or new_label == 'r':
+                if new_label in self.labels or new_label == 'x' or new_label == 'd':
+                    if new_label == 'd':
+                        return 'r'
                     return new_label
                 # If the option to add a new label is chosen
                 elif new_label == 'n':
