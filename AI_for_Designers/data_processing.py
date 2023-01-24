@@ -4,6 +4,7 @@ from typing import Any
 
 import os
 import numpy as np
+import warnings
 import matplotlib.pyplot as plt
 
 from collections.abc import Collection, Iterable
@@ -233,6 +234,18 @@ class Preprocessing:
             ValueError: This error is raised when a value in the file cannot be converted to a float.
         """
 
+        if start_offset < 0:
+            raise ValueError(f'start_offset should be greater or equal to zero, but is {start_offset}')
+        if stop_offset < 0:
+            raise ValueError(f'stop_offset should be greater or equal to zero, but is {stop_offset}')
+        if size <= 0:
+            raise ValueError(f'Frame size should be greater than zero, but is {size}')
+        if offset <= 0:
+            raise ValueError(f'Frame offset should be greater than zero, but is {offset}')
+        if size < offset:
+            warnings.warn('It is advised to keep the frame size larger than the frame offset!')
+
+
         input_file_b = ''  # empty string to check if two files are used or not
         # Assign input_file_a and _b
         if isinstance(input_file, str):
@@ -309,7 +322,6 @@ class Preprocessing:
                         full_header_features[i] += f',{sensor_names[i]}_{j}'
 
                 # Build the header
-                # print(full_header_features)
                 specified_header = 'ID,label,time'
                 for i in range(stop):
                     specified_header += full_header_features[i]
@@ -319,35 +331,36 @@ class Preprocessing:
 
                 # Write the header to file
                 g.write(specified_header + '\n')
+        
+        # get sampling frequency and the last point
+        sampling_frequency, last_point, size_a = self.get_sampling_frequency(input_file_a, start_offset, stop_offset,
+                                                                             size)
+        # Amount of samples per window
+        samples_window = int(size_a * sampling_frequency) + 1  # Ceil
+
+        # Do the same for gyroscope and call it 'b'
+        if input_file_b != '':
+            sampling_frequency_b, last_point_b, size_b = self.get_sampling_frequency(input_file_b, start_offset, stop_offset, size)
+
+            prev_window_b: list[list[float]] = []
+            current_window_b: list[list[float]] = []
+            
+            samples_window_b = int(size_b * sampling_frequency_b) + 1
+
+        if start_offset > last_point - stop_offset:
+            raise ValueError(f'start_offset or stop_offset too large!'
+                             f'The start_offset should be smaller than the last datapoint minus the stop_offset ({last_point - stop_offset}s)')
+        if start_offset > last_point_b - stop_offset:
+            raise ValueError(f'start_offset or stop_offset too large!'
+                                f'The start_offset should be smaller than the last datapoint minus the stop_offset ({last_point_b - stop_offset}s)')
 
         try:
-            # get sampling frequency and the last point
-            sampling_frequency, last_point, size_a = self.get_sampling_frequency(input_file_a, start_offset, stop_offset,
-                                                                                 size)
-
             # Variable for the previous window and the current window
             prev_window: list[list[float]] = []
             current_window: list[list[float]] = []
 
-            # Amount of samples per window
-            samples_window = int(size_a * sampling_frequency) + 1  # Ceil
-
-            # Do the same for gyroscope and call it 'b'
-            if input_file_b != '':
-                sampling_frequency_b, last_point_b, size_b = self.get_sampling_frequency(input_file_b, start_offset, stop_offset, size)
-
-                prev_window_b: list[list[float]] = []
-                current_window_b: list[list[float]] = []
-                
-                samples_window_b = int(size_b * sampling_frequency_b) + 1
-
             # When the end of a datafile is reached, this value is set to False and the loop is exited
             not_finished = True
-
-            # if input_file_b != '':
-            #     print(sampling_frequency, sampling_frequency_b, samples_window, samples_window_b)
-            # else:
-            #     print(sampling_frequency, samples_window)
 
             # Opening the data file again and skipping the header lines.
             k = 0
@@ -359,7 +372,6 @@ class Preprocessing:
                     f_b = open(input_file_b)
                     for _ in range(skip_n_lines_at_start):
                         f_b.readline()
-                # print(start_offset, stop_offset, size_a)
 
                 line = f.readline().strip().split(',')
                 while float(line[0]) < start_offset:
@@ -374,8 +386,6 @@ class Preprocessing:
                 with open(self.output_file, 'a') as g:
                     # While the end of the file is not yet reached
                     while not_finished:
-                        # while k < 1:
-                        # If there is no window made yet
                         if len(current_window) == 0:
                             startpoint = start_offset
                             timestamp_list.append(startpoint)
@@ -429,12 +439,12 @@ class Preprocessing:
                                     # The last line of the file is an empty string. When detected we exit the while loop
                                     if line[0] == '':
                                         not_finished = False
-                                        # print('It stopped at acc data', timestamp_list)
                                         break
+                                    # Check if the line that you read will not be able to become a full window because of the stop offset
                                     elif float(line[0]) > last_point - stop_offset + offset:
                                         not_finished = False
-                                        # print('it stopped at acc data', last_point - stop_offset, prev_window[-1], line[0], timestamp_list)
                                         break
+                                    # Buiild new part of the frame
                                     if i > len(current_window) - 1:
                                         current_window.append([])
                                         for j in range(start, stop + 1):
@@ -448,7 +458,7 @@ class Preprocessing:
                                     if line[0] == '':
                                         not_finished = False
                                         break
-
+                                # Make sure all windows have the same length
                                 while i < len(current_window) - 1:
                                     current_window.pop(-1)
 
@@ -456,6 +466,7 @@ class Preprocessing:
                             except EOFError:
                                 not_finished = False
 
+                        # For gyro data, code is the same as above except it does not contain have to build the timestamp list
                         if input_file_b != '':
                             # for readabilitiy check comments above, this is repeated code
                             if len(current_window) == 0:
@@ -523,12 +534,14 @@ class Preprocessing:
                                             not_finished = False
                                             break
 
+                                    # Make sure all windows are of equal length
                                     while i < len(current_window) - 1:
                                         current_window.pop(-1)
 
                                 except EOFError:
                                     not_finished = False
                         
+                        # List to keep track of the starting points of all of the windows for the final data
                         timestamp_list.append(startpoint)
                         startpoint += offset
 
@@ -605,8 +618,6 @@ class Preprocessing:
                         h.write(f",{last_index},{last_index + current_ID - 1},{video_file},{video_offset}\n")
                 if input_file_b != '':
                     f_b.close()
-                # print(len(print_timestamps), print_timestamps)
-            # print(k)
             plt.show()
 
             # If do_scale is set to True make a scaled version of the file as well

@@ -107,7 +107,7 @@ class ActiveLearning:
         test_size = 0.2
         return train_test_split(self.datapd, self.datapd['label'], test_size=test_size, random_state=random_state)
 
-    def training(self, maximum_iterations, random_points: int = 3, cluster_points: int = 1) -> list[str]:
+    def training(self, maximum_iterations, random_points: int = 4, cluster_points: int = 1) -> list[str]:
         """the process of training the datapoints, first set starting points, then iterate until you have a certainty
 
         Args:
@@ -131,12 +131,12 @@ class ActiveLearning:
 
         # Set the most ambiguous points iteratively
         self.iterate(maximum_iterations)
-        # Write to csv file
-        # self.write_to_file()
 
+        # Save the model as a picle file
         with open(fr'Models/model_{self.action_ID}_{maximum_iterations}.pickle', 'wb') as f:
             pickle.dump(self.model, f)
 
+        # Return the labels, you may find new labels while training
         return self.labels
 
     def set_starting_points(self, n_samples: int) -> None:
@@ -171,35 +171,36 @@ class ActiveLearning:
                 # Redo button:
                 if got_labeled == 'r':
                     try:
+                        # Remove it from the list that we will identify
                         del self.labeled_ids[-1]
                         del seen_activities[-1]
                         got_labeled = self.identify(random_id)
+                    # Catch when you remove the first element
                     except IndexError:
                         raise ValueError("You ain't nah removin' nottin")
                     if got_labeled == 'x':
                         self.datapd.drop(random_id, 0)
                         self.X_pool.drop(random_id, 0)
                         continue
-                    print(got_labeled)
+                # Add it to the labels list if it is a new label
                 if not (got_labeled in self.labels or got_labeled == 'r'):
                     self.labels.append(got_labeled)
                 seen_activities.append(got_labeled)
-                # Add the ID to the list
                 self.labeled_ids.append(random_id)
                 self.lastID = random_id
-                print(self.labeled_ids)
-                print(self.lastID)
+        # Fill the X_pool
         for i in range(len(self.labeled_ids)):
             # print(np.where(self.labeled_ids[i]), self.labeled_ids[i])
             self.X_pool.at[self.labeled_ids[i], 'label'] = seen_activities[i]
 
-    def clustered_starting_points(self, n_samples: int) -> None:
-        """_summary_
+    def clustered_starting_points(self, n_samples: int = 1) -> None:
+        """Find the training point based on a clustering algorithm. You should be able to find at least one sample of each label you predict will be in the dataset.
 
         Args:
-            n_samples (int): _description_
+            n_samples (int): Amount of samples that you want from each cluster centre. Keep this value at 1, it is not properly tested. TODO
         """        
         # Amount of clusters that we expect
+        # There is a multiplier of 1.5 so that small clusters are not overlooked
         n_clusters = int(len(self.labels) * 1.5) + 1
         # Determine the means
         kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(self.unpreds[:, 3:])
@@ -224,15 +225,16 @@ class ActiveLearning:
             if got_labeled == 'x':
                 self.remove_row(e)
             else:
+                # Redo button
                 if got_labeled == 'r':
                     self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == self.lastID), 0)
                     got_labeled = self.identify(e)
-
                     if got_labeled == 'x':
                         self.remove_row(e)
                         continue
                     elif got_labeled == 'r':
                         raise ValueError('You sneaky foo. please stop trying to break our code. As punishment you shall be labeling from the start')
+                # Add the label to the label list if it is a new label
                 if not (got_labeled in self.labels or got_labeled == 'r'):
                     self.labels.append(got_labeled)
                 self.labeled_ids.append(e)
@@ -260,19 +262,16 @@ class ActiveLearning:
             # label it (set_ambiguous_point)
             # add to training data 
             new_index, margin = self.set_ambiguous_point()
-            # Iterate for a decided number of points or until you have a certain margin or gini
-            # TODO: Investigate margin or gini at which you have a good accuracy
+            # Iterate for a decided number of points or until you have a certain margin
             if iter_num >= max_iter or margin > 0.15:
                 break
 
     def set_ambiguous_point(self) -> tuple[int, int]:
         """Lets designer label ambiguous point
 
-        Raises:
-            ValueError: _description_
-
         Returns:
-            tuple[int, int]: _description_
+            tuple[int, int]: Return the ID that has been labelled and the margin (certainty) of the point that has been labeled.
+
         """      
 
         self.html_id = time.time()
@@ -291,6 +290,7 @@ class ActiveLearning:
             self.remove_row(get_id_to_label)
             return get_id_to_label, 0
         else:
+            # Redo button
             if new_label == 'r':
                 self.preds = np.delete(self.preds, np.where(self.preds[:, 0] == self.lastID), 0)
                 new_label = self.identify(get_id_to_label,
@@ -319,15 +319,15 @@ class ActiveLearning:
             # Return the label and the margin
             return get_id_to_label, margin
 
-    def identify(self, id, les_probs=None, process: str = ''):
+    def identify(self, id, les_probs: dict[str, float] | None = None, process: str = ''):
         """This function will call the identification system from Gijs en Timo, for now it has been automated
 
         Args:
-            id (int): _description_
-            les_probs (_type_, optional): _description_. Defaults to None.
+            id (int): The ID that will be labeled
+            les_probs (_type_, optional): When in iterate, this tuple has the probabilities of the current datapoint to each label. When defaulted to None this does not print.
 
         Returns:
-            object: _description_
+            object: return the return of the videolabeler, so the class that the point is labeled as
         """        
         
         timestamp = self.datapd.iloc[id, 2]
@@ -390,16 +390,10 @@ class ActiveLearning:
             for label, prob in zip(self.model.classes_, self.model.predict_proba(
                                    self.unpreds[np.where(self.unpreds[:, 0] == lowest_margin_sample_id)[0], 3:]).tolist()[0]):
                 les_probs[label] = prob
-
-            # Add the accuracy, this is only for a nice plot and can be deleted afterwards.
-            # self.gini_margin_acc[-1][2] = accuracy_score(self.model.predict(self.X_test[:, 3:]), self.y_test)
             # Oeh fun result get better with more samples Oeh!
-            # print(self.gini_margin_acc[-1])
             return lowest_margin_sample_id, lowest_margin, les_probs
         # Exception mostly for testing idk if it will every be handydany again
         except ValueError:
-            # self.X_pool.to_csv('xpool doet raar.csv')
-            # print(preds)
             raise ValueError(self.preds)
 
     @staticmethod
@@ -407,10 +401,10 @@ class ActiveLearning:
         """returns the gini: 1 - sum(p^2)
 
         Args:
-            list_of_p (_type_): _description_
+            list_of_p (_type_): A list of the probabilities of the to be labeled point belongs to each class
 
         Returns:
-            float: The gini impurity index
+            float: The gini impurity index, to be used for evaluation your model
         """        
         # Return the gini: 1 - sum(p^2)
         return 1 - sum((item * item for item in list_of_p))
@@ -432,7 +426,8 @@ class ActiveLearning:
         we ask the designer to confirm n predicted test labels
 
         Args:
-            n_to_check (int | None, optional): _description_. Defaults to None.
+            n_to_check (int | None, optional): Amount of values that you want tested. When None is given, 
+            you will iterate through the entire test set (20% of the entire sample size).
 
         Returns:
             int: error_count and n_to_check
@@ -441,28 +436,56 @@ class ActiveLearning:
         self.html_id = -1
         
         # TODO improve:
+        # Check for None or numerical size
         if n_to_check is None or n_to_check > len(self.X_test):
             n_to_check = len(self.X_test)
-        i = 0
-        while i < n_to_check-1:
             test_ids = []
-            while len(test_ids) != n_to_check-i:
+            # j is to remember how many samples you deleted
+            j = 0
+            # Find amount of values that you still need
+            while len(test_ids) != n_to_check:
                 random_id = random.randint(0, self.datapd.shape[0])
+                # Find testing ids
                 if random_id in self.X_test[:, 0] and random_id not in test_ids:
                     test_ids.append(random_id)
             predictions = self.model.predict(np.array(self.datapd.iloc[test_ids, 3:]))
             error_count = 0
 
+            # Iterate through the test ids
             for j in range(len(test_ids)):
                 result = self.identify(test_ids[j], process='TESTING')
                 if result == 'x':
-                    pass
+                    j += 1
                 elif predictions[j] != result:
                     error_count += 1
-                    i += 1
-                else:
-                    i += 1
-        print(f'Error rate: {error_count/n_to_check} ({n_to_check} samples)')
+
+            print(f'Error rate: {error_count/(n_to_check-j)} ({n_to_check-j} samples)')
+        else:
+            # Make sure that 
+            i = 0
+            # Make sure you always test the amount of values that you gave with n_to_check, even if you delete some sample.
+            while i < n_to_check-1:
+                test_ids = []
+                # Find amount of values that you still need, even if samples have been deleted
+                while len(test_ids) != n_to_check-i:
+                    random_id = random.randint(0, self.datapd.shape[0])
+                    # Find testing ids
+                    if random_id in self.X_test[:, 0] and random_id not in test_ids:
+                        test_ids.append(random_id)
+                predictions = self.model.predict(np.array(self.datapd.iloc[test_ids, 3:]))
+                error_count = 0
+
+                # Iterate through the test ids
+                for j in range(len(test_ids)):
+                    result = self.identify(test_ids[j], process='TESTING')
+                    if result == 'x':
+                        pass
+                    elif predictions[j] != result:
+                        error_count += 1
+                        i += 1
+                    else:
+                        i += 1
+            print(f'Error rate: {error_count/n_to_check} ({n_to_check} samples)')
         
         # return error_count, n_to_check
 
