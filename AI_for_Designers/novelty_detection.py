@@ -9,7 +9,7 @@ from sklearn.neighbors import LocalOutlierFactor
 from IPython.display import HTML, display
 
 
-class NoveltyDetection():
+class NoveltyDetection:
     def __init__(self, data_file: str, processed_data_files: str) -> None:
         self.data_file = data_file
         self.datapd = pd.read_csv(data_file)
@@ -17,18 +17,18 @@ class NoveltyDetection():
         self.html_id = 0
 
     def detect(self, contamination: int = 0.1) -> list[list[float, str]]:
-        """Function that detects anomalies in the data using LocalOutlierFactor
+        """Function that detects anomalies in the data using LocalOutlierFactor.
 
         Args: 
             contamination (int): The percentage of the dataset that is considered an outlier. Defaults to 0.1.
 
         Returns:
-            list[list[float, str]]: A list containg the lists with the timestamp and the videofile
+            list[list[float, str]]: A list containing the lists with the timestamp and the video-file.
         """        
 
         # Choosing the model LocalOutlierFactor
         clf = LocalOutlierFactor(n_neighbors=20, novelty=False, contamination=contamination, n_jobs=int(cpu_count()*3/4))
-        # fit and predict the model
+        # Fit and predict the model
         prediction = clf.fit_predict(self.datapd.iloc[:, 3:])
         # Counting the outliers, which are represented with the value -1
         count = 0
@@ -44,26 +44,26 @@ class NoveltyDetection():
                 f.readline()
                 for _ in range(id):
                     f.readline()
-                splitted = f.readline().strip().split(',')
-                i = int(splitted[0])
-                time = float(splitted[2])
+                split = f.readline().strip().split(',')
+                i = int(split[0])
+                time = float(split[2])
             with open(self.processed_data_files) as f:
                     for line in f:
-                        splitted = line.strip().split(',')
-                        if int(splitted[1]) <= i <= int(splitted[2]):
-                            video = splitted[3]
+                        split = line.strip().split(',')
+                        if int(split[1]) <= i <= int(split[2]):
+                            video = split[3]
                             time_video.append([time, video])
                             break
 
         return time_video
 
-    def play_novelties(self, time_video: list[list[float, str]], window_size: float) -> None:
+    def play_novelties(self, time_video: list[list[float | str]], window_size: float) -> None:
         """Function to display the video in the output cell. The video starts automatically at the timestamp,
         plays for window_size seconds and then goes back to the timestamp to loop.
 
         Args:
-            video_file (str): relative file-location to the video file.
-            timestamp (float): starting point of the window, seen from the start of the video in seconds.
+            time_video (list[list[float | str]]): list containing a list with a timestamp and a video-file that are
+            classified as novelties.
             window_size (float): length of the window in seconds.
         """
 

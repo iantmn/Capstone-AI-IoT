@@ -19,7 +19,7 @@ class Preprocessing:
 
     @staticmethod
     def time(data: Collection, samples_window: float) -> list[list[float]]:
-        """Function to extract feature from the time-domain data
+        """Function to extract feature from the time-domain data.
 
         Args:
             data (Collection): array of multiple sensors. Rows are data, columns are different sensors.
@@ -47,7 +47,7 @@ class Preprocessing:
     @staticmethod
     def fourier(data: Collection, sampling_frequency: float, epsilon: float = 0.1, zero_padding: int = 0) -> \
             tuple[Any, list[tuple[int, float, float, float]]]:
-        """In the function: zero padding, fft time data columns, spectral analysis
+        """In the function: zero padding, fft time data columns, spectral analysis.
 
         Args:
             data (Collection): array of multiple sensors. Rows are data, columns are different sensors.
@@ -55,7 +55,7 @@ class Preprocessing:
             epsilon (float): relative boundary for what values that are higher than the epsilon * maximum value is used
             to add to the total power.
             zero_padding: total amount of zeros are added to the data collection. This will increase the amount of
-            frequencies in the fourier transform .
+            frequencies in the fourier transform.
 
         Returns:
             tuple[np.array[float]]: tuple of features for this specific windowed sample.
@@ -79,16 +79,16 @@ class Preprocessing:
     @staticmethod
     def cntrd_pwr(dataset: Collection, sampling_frequency: float, epsilon: float = 0.1) -> list[tuple[float, float]]:
         """Finds the maximum power of 3 sensors and the frequency for which the energy at the left is the same as the
-        energy on the right takes a threshold of epsilon*max_value
+        energy on the right takes a threshold of epsilon*max_value.
 
         Args:
-            dataset (Collection): frequency domain dataset
-            epsilon (float): parameter to determine what samples play a part in the centroid calcultations. range 0-1
-            sampling_frequency (float): sampling frequency
+            dataset (Collection): frequency domain dataset.
+            epsilon (float): parameter to determine what samples play a part in the centroid calculations. range 0-1.
+            sampling_frequency (float): sampling frequency.
 
         Returns:
             list[tuple[int, int, int], tuple[float, float, float]]: list of a tuple of the centroid frequency and 
-            the maximum power of all sensors
+            the maximum power of all sensors.
         """
 
         # Making sure that the dataset is a numpy array
@@ -102,7 +102,6 @@ class Preprocessing:
         for i in range(sensor_range):
             maxm = max(data[1:, i])
             length = len(data[:, i])
-            # print(f'maximum: {maxm}, length {length}')
             # Sum power and sum all values above the threshold
             for j in range(1, length):
                 total_power[i] += abs(data[j][i])
@@ -122,14 +121,14 @@ class Preprocessing:
 
     @staticmethod
     def peak_value_frequency(dataset: Collection, sampling_frequency: float) -> list[tuple[int, float]]:
-        """Find the frequency that is the most present in a PSD. Do not include DC component
+        """Find the frequency that is the most present in a PSD. Does not include the DC component.
 
         Args:
-            dataset (Collection): frequency domain dataset
-            sampling_frequency (float): the sampling frequency used to measure the data
+            dataset (Collection): frequency domain dataset.
+            sampling_frequency (float): the sampling frequency used to measure the data.
 
         Returns:
-            list[tuple[int, float]]: list with a tuple containing the index and the corresponding frequency
+            list[tuple[int, float]]: list with a tuple containing the index and the corresponding frequency.
         """
 
         # List to save the peaks and their frequencies in
@@ -143,25 +142,24 @@ class Preprocessing:
         for i in range(data.shape[1]):
             max_value = max(abs(data[1:mid, i]))
             index = np.where(abs(data[1:mid, i]) == max_value)[0][0] + 1
-            # print(loc, abs(data[loc, i] / (interval * data.shape[0])), abs(data[loc, i] / (interval * data.shape[0])))
             peaks.append((index, index * sampling_frequency / (2 * data.shape[0])))
         return peaks
 
     @staticmethod
-    def get_sampling_frequency(input_file: str, start_offset: float = 0, stop_offset: float = 0, size: float = 2, skip_n_lines_at_start: int = 0) -> \
-            tuple[float, float, float]:
-        """Retrieving the sampling frequency from the timestamps from the input file
+    def get_sampling_frequency(input_file: str, start_offset: float = 0, stop_offset: float = 0, size: float = 2,
+                               skip_n_lines_at_start: int = 0) -> tuple[float, float, float]:
+        """Retrieving the sampling frequency from the timestamps from the input file.
 
         Args:
-            input_file:
-            start_offset (float, optional): Skip the first r seconds of the data. Defaults to 0.
-            stop_offset (float, optional): Skip the last r seconds of the data. Defaults to 0.
-            size(float, optional): Size of the window in seconds. Defaults to 2.
-            skip_n_lines_at_start (int, optional): Skip the first n lines at the start of the data file. Some times the first
-            few lines contain no data. These lines should be skipped. Defaults to 0.
+            input_file: (str): file path to the data.
+            start_offset (float, optional): skip the first r seconds of the data. Defaults to 0.
+            stop_offset (float, optional): skip the last r seconds of the data. Defaults to 0.
+            size(float, optional): size of the window in seconds. Defaults to 2.
+            skip_n_lines_at_start (int, optional): skip the first n lines at the start of the data file. Sometimes the
+            first few lines contain no data. These lines should be skipped. Defaults to 0.
 
         Returns:
-            tuple[float, float, float]: Returns the sampling frequency, the last timestamp and the window size
+            tuple[float, float, float]: returns the sampling frequency, the last timestamp and the window size.
         """
 
         with open(input_file) as f:
@@ -192,46 +190,44 @@ class Preprocessing:
             if size + start_offset + stop_offset > last_point - t0:
                 size = last_point - t0 - start_offset - stop_offset
 
-            # print(size, t0, last_point)
             return sampling_frequency, last_point, size
 
     def windowing(self, input_file: str | list[str], video_file: str = '', label: str = '',
                   start_offset: float = 0, stop_offset: float = 0,
                   size: float = 2, offset: float = 0.2, start: int = 1, stop: int = 3, video_offset: float = 0,
                   epsilon: float = 0.1, skip_n_lines_at_start: int = 0, do_plot: bool = False, do_scale=False) -> None:
-        """
-        Function for making windows of a certain size, with an offset. A window is made and the features of the window
-        are extracted. The window is slided the offset amount of seconds to the right and new window is made and
+        """Function for making windows of a certain size, with an offset. A window is made and the features of the window
+        are extracted. The window is slided the offset amount of seconds to the right and new window is made and a
         its features are extracted. This is done until the end of the file is reached. The extracted features are saved
         in a file with the name of the output_file attribute.
 
         Args:
-            input_file (str, list[string]): The relative path of the file with the data, seen from the main file. If
-            accelerometer data and gyroscopedata both want to be used, a list with both paths can be used. Preferably
-            enter the file with the acceleromter first.
-            video_file (str, optional): The relative path of the file with the corresponding video the captures the
+            input_file (str, list[string]): the relative path of the file with the data, seen from the main file. If
+            accelerometer data and gyroscope data both want to be used, a list with both paths can be used. Preferably
+            enter the file with the accelerometer first.
+            video_file (str, optional): The relative path of the file with the corresponding video the captures that
             process of capturing the data, seen from the main file. The path is only printed to an output file.
             Defaults to ''.
-            label (str): The name of the label of the activity. Defaults to ''.
-            size (float, optional): Size of the window in seconds. Defaults to 2.
-            start_offset (float, optional): Skip the first r seconds of the data. Defaults to 0.
-            stop_offset (float, optional): Skip the last r seconds of the data. Defaults to 0.
-            offset (float, optional): Size of the offset in seconds. Defaults to 0.2.
-            start (int, optional): Start column from the data file. Defaults to 1.
-            stop (int, optional): Last column (including) of the data file. Defaults to 3.
-            video_offset (float, optional): time in seconds that the video start before the start of the data. Defaults to 0.
-            epsilon (float, optional): Variable for the fourier function. Defaults to 0.1.
-            skip_n_lines_at_start (int, optional): Skip the first n lines at the start of the data file. Some times the first
+            label (str): the name of the label of the activity. Defaults to ''.
+            size (float, optional): size of the window in seconds. Defaults to 2.
+            start_offset (float, optional): skip the first r seconds of the data. Defaults to 0.
+            stop_offset (float, optional): skip the last r seconds of the data. Defaults to 0.
+            offset (float, optional): size of the offset in seconds. Defaults to 0.2.
+            start (int, optional): start column from the data file. Defaults to 1.
+            stop (int, optional): last column (including) of the data file. Defaults to 3.
+            video_offset (float, optional): time in seconds that the video starts before the start of the data. Defaults to 0.
+            epsilon (float, optional): variable for the fourier function. Defaults to 0.1.
+            skip_n_lines_at_start (int, optional): skip the first n lines at the start of the data file. Sometimes the first
             few lines contain no data. These lines should be skipped. Defaults to 0.
-            do_plot (bool, optional): Set to true when a plot of every window is wanted. Defaults to False.
-            do_scale (bool, optional): Set to true when scaling is wanted. All the features in the feature file wil be
+            do_plot (bool, optional): set to true when a plot of every window is wanted. Defaults to False.
+            do_scale (bool, optional): set to true when scaling is wanted. All the features in the feature file will be
             scaled. ATTENTION! Only set to true, when the last data is added. Otherwise, the previous files will get
             scaled multiple times. Defaults to False.
 
         Raises:
-            NotImplementedError: This error is raised if the file extension is not supported.
-            FileNotFoundError: This error is raised if the file-parameter cannot be found.
-            ValueError: This error is raised when a value in the file cannot be converted to a float.
+            NotImplementedError: this error is raised if the file extension is not supported.
+            FileNotFoundError: this error is raised if the file-parameter cannot be found.
+            ValueError: this error is raised when a value in the file cannot be converted to a float.
         """
 
         if start_offset < 0:
@@ -244,7 +240,6 @@ class Preprocessing:
             raise ValueError(f'Frame offset should be greater than zero, but is {offset}')
         if size < offset:
             warnings.warn('It is advised to keep the frame size larger than the frame offset!')
-
 
         input_file_b = ''  # empty string to check if two files are used or not
         # Assign input_file_a and _b
@@ -266,7 +261,7 @@ class Preprocessing:
         # This list is used when writing to the file to know when a window starts.
         timestamp_list: list[float] = []
 
-        # check if the file that we want to extract the data from has already been used in this action_ID
+        # Check if the file that we want to extract the data from has already been used in this action_ID
         already_processed = False
         try:
             with open(fr'Preprocessed-data/{self.action_ID}/processed_data_files.txt') as f:
@@ -331,7 +326,7 @@ class Preprocessing:
 
                 # Write the header to file
                 g.write(specified_header + '\n')
-        
+
         # get sampling frequency and the last point
         sampling_frequency, last_point, size_a = self.get_sampling_frequency(input_file_a, start_offset, stop_offset,
                                                                              size)
@@ -340,19 +335,23 @@ class Preprocessing:
 
         # Do the same for gyroscope and call it 'b'
         if input_file_b != '':
-            sampling_frequency_b, last_point_b, size_b = self.get_sampling_frequency(input_file_b, start_offset, stop_offset, size)
+            sampling_frequency_b, last_point_b, size_b = self.get_sampling_frequency(input_file_b, start_offset,
+                                                                                     stop_offset, size)
 
             prev_window_b: list[list[float]] = []
             current_window_b: list[list[float]] = []
-            
+
             samples_window_b = int(size_b * sampling_frequency_b) + 1
 
         if start_offset > last_point - stop_offset:
             raise ValueError(f'start_offset or stop_offset too large!'
-                             f'The start_offset should be smaller than the last datapoint minus the stop_offset ({last_point - stop_offset}s)')
-        if start_offset > last_point_b - stop_offset:
-            raise ValueError(f'start_offset or stop_offset too large!'
-                                f'The start_offset should be smaller than the last datapoint minus the stop_offset ({last_point_b - stop_offset}s)')
+                             f'The start_offset should be smaller than the last datapoint minus the stop_offset'
+                             f'({last_point - stop_offset}s)')
+        if input_file_b != '':
+            if start_offset > last_point_b - stop_offset:
+                raise ValueError(f'start_offset or stop_offset too large!'
+                                 f'The start_offset should be smaller than the last datapoint minus the stop_offset'
+                                 f'({last_point_b - stop_offset}s)')
 
         try:
             # Variable for the previous window and the current window
@@ -367,7 +366,7 @@ class Preprocessing:
             with open(input_file_a) as f:
                 for _ in range(skip_n_lines_at_start):
                     f.readline()
-                # open file_b if it exists:
+                # Open file_b if it exists:
                 if input_file_b != '':
                     f_b = open(input_file_b)
                     for _ in range(skip_n_lines_at_start):
@@ -376,12 +375,10 @@ class Preprocessing:
                 line = f.readline().strip().split(',')
                 while float(line[0]) < start_offset:
                     line = f.readline().strip().split(',')
-                    # timestamp_counter += 1
                 if input_file_b != '':
                     line_b = f_b.readline().strip().split(',')
                     while float(line_b[0]) < start_offset:
                         line_b = f_b.readline().strip().split(',')
-                # timestamp_list.append(line[0])
                 # Opening the output file; the extracted features will be put in the file
                 with open(self.output_file, 'a') as g:
                     # While the end of the file is not yet reached
@@ -423,10 +420,10 @@ class Preprocessing:
                                         i += 1
                                         prev_window.append(current_window[i].copy())
 
-                            # Overwrite the current window values with it's previous values
-                            # The current window is slided the samples_offset amount of samples into the future. Thus
-                            # The samples [samples_offset:] of prev_window are the first samples for the current window.
-                            # The rest of the samples are new and read from the data file
+                            # Overwrite the current window values with its previous values the current window is slided
+                            # the samples_offset amount of samples into the future. Thus, the samples [samples_offset:]
+                            # of prev_window are the first samples for the current window. The rest of the samples are
+                            # new and read from the data file
                             i = 0
                             for lst in prev_window:
                                 if lst[0] >= startpoint:
@@ -440,18 +437,18 @@ class Preprocessing:
                                     if line[0] == '':
                                         not_finished = False
                                         break
-                                    # Check if the line that you read will not be able to become a full window because of the stop offset
+                                    # Check if the line that you read will not be able to become a full window because
+                                    # of the stop offset
                                     elif float(line[0]) > last_point - stop_offset + offset:
                                         not_finished = False
                                         break
-                                    # Buiild new part of the frame
+                                    # Build new part of the frame
                                     if i > len(current_window) - 1:
                                         current_window.append([])
                                         for j in range(start, stop + 1):
-                                            current_window[-1].append(None)
+                                            current_window[-1].append(0.0)
                                     # Read samples_offset amount of samples and add these to the current window
                                     for j in range(start, stop + 1):
-                                        # print(i, i + samples_window - samples_offset, j, line, len(current_window), len(current_window[0]))
                                         current_window[i][j - start] = float(line[j])
                                     i += 1
                                     line = f.readline().strip().split(',')
@@ -462,13 +459,13 @@ class Preprocessing:
                                 while i < len(current_window) - 1:
                                     current_window.pop(-1)
 
-
                             except EOFError:
                                 not_finished = False
 
-                        # For gyro data, code is the same as above except it does not contain have to build the timestamp list
+                        # For gyro data, code is the same as above except it does not contain have to build the timestamp
+                        # list
                         if input_file_b != '':
-                            # for readabilitiy check comments above, this is repeated code
+                            # for readability check comments above, this is repeated code
                             if len(current_window) == 0:
                                 current_window_b.append([])
                                 for i in range(start, stop + 1):
@@ -479,7 +476,7 @@ class Preprocessing:
                                     current_window_b.append([])
                                     for i in range(start, stop + 1):
                                         current_window_b[-1].append(float(line_b[i]))
-                                        
+
                             else:
                                 if len(prev_window_b) == 0:
                                     for i in range(len(current_window_b)):
@@ -498,10 +495,10 @@ class Preprocessing:
                                             i += 1
                                             prev_window_b.append(current_window_b[i].copy())
 
-                                # Overwrite the current window values with it's previous values
-                                # The current window is slided the samples_offset amount of samples into the future. Thus
-                                # The samples [samples_offset:] of prev_window are the first samples for the current window.
-                                # The rest of the samples are new and read from the data file
+                                # Overwrite the current window values with it's previous values the current window is
+                                # slided the samples_offset amount of samples into the future. Thus, the samples
+                                # [samples_offset:] of prev_window are the first samples for the current window. The
+                                # rest of the samples are new and read from the data file
                                 i = 0
                                 for lst in prev_window_b:
                                     if lst[0] >= startpoint:
@@ -511,22 +508,21 @@ class Preprocessing:
                                 # Read new lines from the file and add these to the end of the current file
                                 try:
                                     while float(line_b[0]) < startpoint + size_b:
-                                        # The last line of the file is an empty string. When detected we exit the while loop
+                                        # The last line of the file is an empty string. When detected we exit the while
+                                        # loop
                                         if line_b[0] == '':
                                             not_finished = False
                                             # print('It stopped at gyro data', timestamp_list)
                                             break
                                         elif float(line_b[0]) > last_point - stop_offset + offset:
                                             not_finished = False
-                                            # print('it stopped at gyro data', last_point - stop_offset, prev_window_b[-1], line_b[0], timestamp_list)
                                             break
                                         if i > len(current_window_b) - 1:
                                             current_window_b.append([])
                                             for j in range(start, stop + 1):
-                                                current_window_b[-1].append(None)
+                                                current_window_b[-1].append(0.0)
                                         # Read samples_offset amount of samples and add these to the current window
                                         for j in range(start, stop + 1):
-                                            # print(i, i + samples_window - samples_offset, j, line, len(current_window), len(current_window[0]))
                                             current_window_b[i][j - start] = float(line_b[j])
                                         i += 1
                                         line_b = f_b.readline().strip().split(',')
@@ -540,15 +536,15 @@ class Preprocessing:
 
                                 except EOFError:
                                     not_finished = False
-                        
-                        # List to keep track of the starting points of all of the windows for the final data
+
+                        # List to keep track of the starting points of all the windows for the final data
                         timestamp_list.append(startpoint)
                         startpoint += offset
 
                         if not_finished:
-                            # choose the length of the zero padding of the window. Increased definition
+                            # Choose the length of the zero padding of the window. Increased definition
                             padding = int(len(current_window) * 6 / 5)
-                            # get the features from the window and the fourier signal for plotting
+                            # Get the features from the window and the fourier signal for plotting
                             features_time = self.time(current_window, samples_window)
                             ffts, features_fourier = self.fourier(current_window, sampling_frequency,
                                                                   zero_padding=padding - len(current_window),
@@ -560,51 +556,45 @@ class Preprocessing:
                             for i in range(len(features_time)):
                                 features.append(features_time[i] + list(features_fourier[i])[1:])
 
-                            # Reapeat for b_file
+                            # Repeat for b_file
                             if input_file_b != '':
                                 padding_b = int(len(current_window_b) * 6 / 5)
                                 features_time = self.time(current_window_b, samples_window_b)
-                                ffts, features_fourier = self.fourier(current_window_b, sampling_frequency_b, zero_padding=padding_b-len(current_window_b), epsilon=epsilon)
+                                ffts, features_fourier = self.fourier(current_window_b, sampling_frequency_b,
+                                                                      zero_padding=padding_b - len(current_window_b),
+                                                                      epsilon=epsilon)
                                 for i in range(len(features_time)):
                                     features.append(features_time[i] + list(features_fourier[i])[1:])
-                                
-                            # build a string of the feature data. The first element of the string is the timestamp, pop
+
+                            # Build a string of the feature data. The first element of the string is the timestamp, pop
                             # this timestamp
                             print_timestamps.append(timestamp_list.pop(0))
                             features_list = [str(print_timestamps[-1])]
                             for tup in features:
                                 for i, data in enumerate(tup):
                                     features_list.append(str(data))
-                            # print(features_list)
                             # Add the features to the file if write_to_file is 'y'
                             if write_to_file == 'y':
-                                g.write(str(current_ID + last_index) + ',' + label + ',' + ','.join(features_list) + '\n')
+                                g.write(
+                                    str(current_ID + last_index) + ',' + label + ',' + ','.join(features_list) + '\n')
 
                             # If we want to plot
                             if do_plot:
-                                # mirrored fft for better readability
-                                # ffts_shifted = np.fft.fftshift(ffts)
-                                # frequency axis for non-mirrored fft, account for zero_padding
+                                # Mirrored fft for better readability
+                                # Frequency axis for non-mirrored fft, account for zero_padding
                                 frequency = np.arange(0, sampling_frequency / 2 - 1 / padding,
                                                       sampling_frequency / padding)
-                                # frequency axis for mirrored fft, account for zero_padding
-                                # frequency_shift = np.arange(
-                                #     -sampling_frequency / 2 + sampling_frequency / (2 * padding),  # start
-                                #     sampling_frequency / 2 + sampling_frequency / (2 * padding),  # stop
-                                #     sampling_frequency / padding)  # interval
+                                # Frequency axis for mirrored fft, account for zero_padding
                                 # Time axis for the plots
                                 time = np.arange(start_offset + offset * k,
                                                  start_offset + offset * k + len(current_window) // sampling_frequency,
                                                  1 / sampling_frequency)
-
-                                # print(time)
 
                                 # Plotting specs
                                 fig, axes = plt.subplots(2, 1)
                                 axes[0].plot(time, current_window, label=['X', 'Y', 'Z'])
                                 axes[0].legend(loc='upper left')
                                 axes[0].set_title("Accelerometer data")
-                                # axes[1].plot(frequency, abs(ffts), label=['X', 'Y', 'Z'])
                                 axes[1].plot(frequency, abs(ffts[0:round(len(ffts) / 2)]), label=['X', 'Y', 'Z'])
                                 axes[1].legend(loc='upper left')
                                 axes[1].set_title("Fourier Transform")
@@ -612,8 +602,8 @@ class Preprocessing:
                             k += 1
                             current_ID += 1
 
-                    # Writing the first and the last index and the relative path to the video to the output
-                    # file with the files that are used.
+                    # Writing the first and the last index and the relative path to the video to the output file with
+                    # the files that are used.
                     with open(fr'Preprocessed-data/{self.action_ID}/processed_data_files.txt', 'a') as h:
                         h.write(f",{last_index},{last_index + current_ID - 1},{video_file},{video_offset}\n")
                 if input_file_b != '':
@@ -632,20 +622,20 @@ class Preprocessing:
     @staticmethod
     def plot_accelerometer(input_file: str, start_offset: float = 0, stop_offset: float = 0, start: int = 1,
                            stop: int = 3, skip_n_lines_at_start: int = 0) -> None:
-        """Function to plot the time-domain curves of data from an input-file
+        """Function to plot the time-domain curves of data from an input-file.
 
         Args:
-            input_file (str): The relative path of the file with the data, seen from the main file.
-            start_offset (float, optional): Skip the first r seconds of the data. Defaults to 0.
-            stop_offset (float, optional): Skip the last r seconds of the data. Defaults to 0.
-            start (int, optional): Start column from the data file. Defaults to 1.
-            stop (int, optional): Last column (including) of the data file. Defaults to 3.
-            skip_n_lines_at_start (int, optional): Skip the first n lines at the start of the data file. Some times the first
+            input_file (str): the relative path of the file with the data, seen from the main file.
+            start_offset (float, optional): skip the first r seconds of the data. Defaults to 0.
+            stop_offset (float, optional): skip the last r seconds of the data. Defaults to 0.
+            start (int, optional): start column from the data file. Defaults to 1.
+            stop (int, optional): last column (including) of the data file. Defaults to 3.
+            skip_n_lines_at_start (int, optional): skip the first n lines at the start of the data file. Sometimes the first
             few lines contain no data. These lines should be skipped. Defaults to 0.
 
         Raises:
-            FileNotFoundError: Error raised if the given input-file cannot be found.
-            ValueError: Error raised if a data point cannot be converted to a float.
+            FileNotFoundError: error raised if the given input-file cannot be found.
+            ValueError: error raised if a data point cannot be converted to a float.
         """
 
         try:
@@ -673,7 +663,6 @@ class Preprocessing:
                     # Read samples_offset amount of samples and add these to the current window
                     data.append([])
                     for j in range(start, stop + 1):
-                        # print(i, i + samples_window - samples_offset, j, line, len(current_window), len(current_window[0]))
                         data[-1].append(float(line[j]))
 
         except FileNotFoundError:
@@ -691,19 +680,21 @@ class Preprocessing:
 
     @staticmethod
     def get_time_stats(input_file: str, skip_n_lines_at_start: int = 0) -> tuple[float, float, float, float]:
-        """Function to get some stats about the sampling period (average period, standard deviation, minimal and maximal period).
+        """Function to get some stats about the sampling period (average period, standard deviation, minimal and maximal
+        period).
 
         Args:
-            input_file (str): The relative path of the file with the data, seen from the main file.
-            skip_n_lines_at_start (int, optional): Skip the first n lines at the start of the data file. Some times the first
-            few lines contain no data. These lines should be skipped. Defaults to 0.
+            input_file (str): the relative path of the file with the data, seen from the main file.
+            skip_n_lines_at_start (int, optional): skip the first n lines at the start of the data file. Sometimes the
+            first few lines contain no data. These lines should be skipped. Defaults to 0.
 
         Raises:
-            FileNotFoundError: Error raised if the given input-file cannot be found.
-            ValueError: Error raised if a data point cannot be converted to a float.
+            FileNotFoundError: error raised if the given input-file cannot be found.
+            ValueError: error raised if a data point cannot be converted to a float.
 
         Returns:
-            tuple[float, float, float, float]: The results: average period, standard deviation, minimal period and maximal period
+            tuple[float, float, float, float]: the results: average period, standard deviation, minimal period and
+            maximal period
         """
 
         try:
@@ -741,11 +732,11 @@ class Preprocessing:
 
     def SuperStandardScaler(self, input_file: str) -> None:
         """Scale the features with their respective scale. All centroid, peak and total power are put on the same scale.
-        By setting do_scale in windowing to True this function is called automatically, else build a object of
-        Preprocessing in main and execute Preprocessing.SuperStandardScaler(path)
+        By setting do_scale in windowing to True this function is called automatically, else build an object of
+        Preprocessing in main and execute Preprocessing.SuperStandardScaler(path).
 
         Args:
-            input_file (str): input file where the unscaled features are stored
+            input_file (str): input file where the unscaled features are stored.
         """
 
         # First, manually build the data_array, this is because importing with a header and starting columns is a pain
@@ -765,7 +756,7 @@ class Preprocessing:
                     columns = np.append(columns, np.array([line[:3]], dtype='unicode'), axis=0)
                     data_array = np.append(data_array, np.array([line[3:]], dtype=float), axis=0)
 
-        # Yeah append only works when the first element has the same size so i filled one with zeros, sue me
+        # Yeah, append only works when the first element has the same size so I filled one with zeros, sue me
         data_array = data_array[1:]
         columns = columns[1:]
 
@@ -803,7 +794,7 @@ class Preprocessing:
             # Rescale the columns with their respective feature mean and std
             for j in range(0, min(3, sensors_amount) * fa, fa):
                 data_array[:, i + j] = (data_array[:, i + j] - sum_feature) / std_feature
-        # if there are more than 3 sensors used, we have gyroscope sensors as well.
+        # If there are more than 3 sensors used, we have gyroscope sensors as well.
         if sensors_amount > 3:
             for i in range(0, fa):
                 sum_feature = 0
@@ -839,8 +830,8 @@ def empty_files(files: Iterable[str]) -> None:
     is done.
 
     Args:
-        files (Iterable[str]): File locations that will be made empty, seen from the main script
-    """    
+        files (Iterable[str]): file locations that will be made empty, seen from the main script
+    """
 
     for file in files:
         # Check whether the file exists
