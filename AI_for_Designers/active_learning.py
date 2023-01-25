@@ -261,13 +261,17 @@ class ActiveLearning:
             # find most ambiguous point (find_most_ambiguous_id)
             # label it (set_ambiguous_point)
             # add to training data 
-            new_index, margin = self.set_ambiguous_point()
+            new_index, margin = self.set_ambiguous_point([iter_num, max_iter])
             # Iterate for a decided number of points or until you have a certain margin
             if iter_num >= max_iter or margin > 0.15:
                 break
 
-    def set_ambiguous_point(self) -> tuple[int, int]:
+    def set_ambiguous_point(self, progress: list[int] | None = None) -> tuple[int, int]:
         """Lets designer label ambiguous point
+
+        Args:
+            progress (list[int], optional): list with the first entry containing the number of the current iteration
+            and the second entry containing total iterations. Defaults to None.
 
         Returns:
             tuple[int, int]: Return the ID that has been labelled and the margin (certainty) of the point that has been labeled.
@@ -284,8 +288,7 @@ class ActiveLearning:
         self.print_prediction_point(get_id_to_label)
         # Get what label this ID is supposed to get
         # Just for testing, add les_probs as arg to les_probs if you want these to be printed
-        new_label = self.identify(get_id_to_label,
-                                  les_probs=les_probs)
+        new_label = self.identify(get_id_to_label, les_probs=les_probs, progress=progress)
         if new_label == 'x':
             self.remove_row(get_id_to_label)
             return get_id_to_label, 0
@@ -319,12 +322,14 @@ class ActiveLearning:
             # Return the label and the margin
             return get_id_to_label, margin
 
-    def identify(self, id, les_probs: dict[str, float] | None = None, process: str = ''):
+    def identify(self, id, les_probs: dict[str, float] | None = None, process: str = '', progress: list[int] | None = None):
         """This function will call the identification system from Gijs en Timo, for now it has been automated
 
         Args:
             id (int): The ID that will be labeled
             les_probs (_type_, optional): When in iterate, this tuple has the probabilities of the current datapoint to each label. When defaulted to None this does not print.
+            progress (list[int], optional): list with the first entry containing the number of the current iteration
+            and the second entry containing total iterations. Defaults to None.
 
         Returns:
             object: return the return of the videolabeler, so the class that the point is labeled as
@@ -342,9 +347,9 @@ class ActiveLearning:
         # print(id)
         # print(video_file)
         if les_probs is None:
-            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, process=process, video_offset=video_offset)
+            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, process=process, video_offset=video_offset, progress=progress)
         else:
-            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, les_probs, process=process, video_offset=video_offset)
+            return self.vid.labeling(video_file, timestamp, self.window_size, self.html_id, les_probs, process=process, video_offset=video_offset, progress=progress)
 
         # return input(f'FOR TESTING: enter the selected label, id = {id}\n')
 
