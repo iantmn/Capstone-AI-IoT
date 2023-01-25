@@ -1,10 +1,18 @@
 def check_product_name(Activity: str) -> None:
+    """Checks whether the name of the Activity is valid (only contains alphanumerical characters, '_' and '-'.
+    The result is printed
+
+    Args:
+        Activity (str): name of the activity
+    """
+
     for letter in Activity:
         if not letter.isalpha() and not letter.isalnum() and letter != '_' and letter != '-':
             print('Name is not valid!')
             return
 
     print('Name is valid!')
+
 
 def amount_of_samples(data_file: str) -> int:
     """Function to find the amount of samples from the preprocessed data

@@ -5,22 +5,31 @@ import time
 
 from collections.abc import Collection
 
+
 class VideoLabeler:
     def __init__(self, labels: Collection[str]) -> None:
         self.labels = list(labels)
         self.html_id = 0
 
-    def labeling(self, video_file: str, timestamp: float, window_size: float, fig_id: int, probs: dict[str, float] = None, process: str = '', video_offset: float = 0, progress: list[int] | None = None) -> str:
-        """Function to label a window in a given video at a given timestamp
+    def labeling(self, video_file: str, timestamp: float, window_size: float,
+                 fig_id: int, probs: dict[str, float] = None, process: str = '', video_offset: float = 0,
+                 progress: list[int] | None = None) -> str:
+        """Function to label a window in a given video at a given timestamp.
 
         Args:
             video_file (str): relative file-location to the video file.
             timestamp (float): starting point of the window, seen from the start of the video in seconds.
             window_size (float): length of the window in seconds.
-            probs: (Collection, optional): Probability that the frame showed is the corresponding label. Defaults to
+            fig_id (int): id of the figure that needs to be displayed next to the video. Should be -1, if there is no
+            figure to be displayed.
+            probs: (Collection, optional): probability that the frame showed is the corresponding label. Defaults to
             None.
-            Progress_list (list[int], optional): list with the first entry containing the number of the current frame
-            and the second entry containing the total amount of frames that need to labeled. Defaults to None.
+            process: (str, optional): string to print between the video and the prompt. Can be used to indicate the
+            process that is executed, e.g. 'TESTING'. Defaults to ''.
+            video_offset (float, optional): time in seconds that the video start before the start of the data. Defaults
+            to 0.
+            progress (list[int], optional): list with the first entry containing the number of the current frame
+            and the second entry containing the total amount of frames that need to be labeled. Defaults to None.
 
         Returns:
             str: the name of the selected label.
@@ -45,7 +54,8 @@ class VideoLabeler:
             for label in self.labels:
                 if len(label) > max_length:
                     max_length = len(label)
-            print(f"Enter the index or the name of one of the following labels. Enter 'n' to add a new label, 'x' to discard this sample, and 'd' to delete the previously labeled  sample:")
+            print(f"Enter the index or the name of one of the following labels. Enter 'n' to add a new label, 'x' to"
+                  f"discard this sample, and 'd' to delete the previously labeled  sample:")
             # Print the labels and their probabilities of classification if given
             for i, label in enumerate(self.labels):
                 if probs:
@@ -106,7 +116,8 @@ class VideoLabeler:
                 else:
                     print('Label does not exist! Try again')
 
-    def display_html(self, video_file: str, timestamp: float, window_size: float, fig_id: int = -1, video_offset: float = 0, progress: list[int] | None = None) -> None:
+    def display_html(self, video_file: str, timestamp: float, window_size: float, fig_id: int = -1,
+                     video_offset: float = 0, progress: list[int] | None = None) -> None:
         """Function to display the video in the output cell. The video starts automatically at the timestamp,
         plays for window_size seconds and then goes back to the timestamp to loop.
 
@@ -114,9 +125,11 @@ class VideoLabeler:
             video_file (str): relative file-location to the video file.
             timestamp (float): starting point of the window, seen from the start of the video in seconds.
             window_size (float): length of the window in seconds.
-            video_offset (float): time in seconds that the video start before the start of the data. Defaults to 0.
-            Progress_list (list[int], optional): list with the first entry containing the number of the current frame
-            and the second entry containing the total amount of frames that need to labeled. Defaults to None.
+            fig_id (int): id of the figure that needs to be displayed next to the video. Should be -1, if there is no
+            figure to be displayed.
+            video_offset (float): time in seconds that the video starts before the start of the data. Defaults to 0.
+            progress (list[int], optional): list with the first entry containing the number of the current frame
+            and the second entry containing the total amount of frames that need to be labeled. Defaults to None.
         """
 
         timestamp += video_offset
@@ -124,7 +137,7 @@ class VideoLabeler:
             progress_string = f'Labeling frame {progress[0]}/{progress[1]}'
         else:
             progress_string = ''
-        # print(timestamp, window_size)
+
         # Function to display HTML code  
         display(HTML(f'''
             <head>
