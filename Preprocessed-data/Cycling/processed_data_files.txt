@@ -1,4 +1,0 @@
-Data\data-cycling\ACCL\Timo_fietsen_GH010031-ACCL.csv,0,3534,Data\data-cycling\Fiets_filmpjes\GL010031_LRV_compressed.mp4
-Data\data-cycling\ACCL\Timo_fietsen_GH010032-ACCL.csv,3535,4015,Data\data-cycling\Fiets_filmpjes\GL010032_LRV.mp4
-Data\data-cycling\ACCL\Timo_fietsen_GH010033-ACCL.csv,4016,4566,Data\data-cycling\Fiets_filmpjes\GL010033_LRV.mp4
-Data\data-cycling\ACCL\Timo_fietsen_GH010034-ACCL.csv,4567,6677,Data\data-cycling\Fiets_filmpjes\GL010034_LRV_compressed.mp4

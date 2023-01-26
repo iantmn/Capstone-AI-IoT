@@ -1,1 +1,0 @@
-This folder contains all sources like images, databases, etc.

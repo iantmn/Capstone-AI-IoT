@@ -1,8 +1,4 @@
-# file and folder structure
-src -> sources like images, database, etc.
+# Introduction
+If you are a designer wanting to analyze how people will be using your product in real-time, you’ve probably had to go through the lengthy process of prototype testing. You might have even considered using sensors to make it easier to analyze larger amounts of data, but realized that it’s useless in its raw form, and you were stuck on having to investigate it manually for hours on end. We created this tool to make sense of this otherwise difficult to interpret data, and classify behavior for you to analyze efficiently.
 
-main.py -> main python file
-
-requirements.txt -> python requirements
-
-installation.md -> installation instructions
+For more information: https://datacentricdesign.github.io/iot-ml-design-kit/
