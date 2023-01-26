@@ -91,6 +91,8 @@ class Preprocessing:
             the maximum power of all sensors.
         """
 
+        # BIG SIDENOTE. We talk about power. THIS IS WRONG. It should be called the energy of the signal. 
+
         # Making sure that the dataset is a numpy array
         data = np.array(dataset)
 
@@ -240,6 +242,8 @@ class Preprocessing:
             raise ValueError(f'Frame offset should be greater than zero, but is {offset}')
         if size < offset:
             warnings.warn('It is advised to keep the frame size larger than the frame offset!')
+        if not os.path.exists(video_file):
+            raise FileExistsError(f'File at path {video_file} does not exist! Check the path')
 
         input_file_b = ''  # empty string to check if two files are used or not
         # Assign input_file_a and _b
