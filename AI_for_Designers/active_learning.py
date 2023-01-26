@@ -449,7 +449,7 @@ class ActiveLearning:
             n_to_check = len(self.X_test)
             test_ids = []
             # j is to remember how many samples you deleted
-            j = 0
+            k = 0
             # Find amount of values that you still need
             while len(test_ids) != n_to_check:
                 random_id = random.randint(0, self.datapd.shape[0])
@@ -463,11 +463,11 @@ class ActiveLearning:
             for j in range(len(test_ids)):
                 result = self.identify(test_ids[j], process='TESTING')
                 if result == 'x':
-                    j += 1
+                    k += 1
                 elif predictions[j] != result:
                     error_count += 1
 
-            print(f'Error rate: {error_count / (n_to_check - j)} ({n_to_check - j} samples)')
+            print(f'Error rate: {error_count / (n_to_check - k)} ({n_to_check - k} samples)')
 
         else:
             # Make sure that 

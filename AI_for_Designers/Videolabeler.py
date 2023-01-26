@@ -55,7 +55,7 @@ class VideoLabeler:
                 if len(label) > max_length:
                     max_length = len(label)
             print(f"Enter the index or the name of one of the following labels. Enter 'n' to add a new label, 'x' to"
-                  f"discard this sample, and 'd' to delete the previously labeled  sample:")
+                  f"discard this sample, and 'd' to delete the previously labeled sample:")
             # Print the labels and their probabilities of classification if given
             for i, label in enumerate(self.labels):
                 if probs:
