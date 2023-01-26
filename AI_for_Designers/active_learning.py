@@ -532,7 +532,6 @@ class ActiveLearning:
 
         plt.clf()
         plt.scatter(self.pca[:, 1], self.pca[:, 2], c='grey')
-        plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x', label='current', s=150)
         for label in self.labels:
             # Pandas made me do it. Fuck pandas
             lst = self.preds[np.where(self.preds[:, 1] == label)[0], :]
@@ -548,6 +547,9 @@ class ActiveLearning:
                 x.append(temp_pca[i][0])
                 y.append(temp_pca[i][1])
             plt.scatter(x, y, label=label)
+        
+        plt.scatter(self.pca[current_id, 1], self.pca[current_id, 2], c='red', marker='x', label='current', s=150)
+
         plt.legend()
 
         plt.savefig(f'Plots/plot_to_label_{self.html_id}.png')
