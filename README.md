@@ -267,8 +267,6 @@ Note that those comparisons used a random train/test split over overlapping fram
 - **Restarting training loses new labels** that you added with `n` during a previous run; add them to `labels` in cell 7 instead.
 - **Timeline colours** are limited to 23 labels.
 - **Multiple recordings** are stitched into one continuous timeline.
-- **"New Data" cell in the demo** points to `GoPro\Gijs_Mok\...`, which is not in the repository. Point it to your own new recording (or to `Data/data-mok/` to try it out).
-- **Hard-coded paths in `GoPro/`.** Both converter scripts have the input and output paths written in the code; edit them before each run.
 
 ---
 
@@ -294,7 +292,3 @@ Built for the **Capstone Applied AI project (TI3150)**, part of the Engineering 
 
 **Clients:** Jacky Bourgeois, Dave Murray-Rust, Kostas Tsiakas
 **Teaching assistant:** Matej Havelka
-
-## License
-
-_Add a license (for example MIT) before publishing._
